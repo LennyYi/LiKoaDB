@@ -1,0 +1,10 @@
+--select * from teflow_param_config
+delete from teflow_param_config where param_code='least_insurance_charge'
+insert into teflow_param_config(param_code,param_name,param_value,description,order_id) values('least_insurance_charge','least_insurance_charge','1500','Least total insurance charge',0)
+
+--20150309 Justin Bin Added
+delete from teflow_param_config where param_code='commission_rate'
+insert into teflow_param_config (param_code,param_name,param_value,[description],order_id) values ('commission_rate','commission rate','PF200','20264',0)
+insert into teflow_param_config (param_code,param_name,param_value,[description],order_id) values ('commission_rate','commission rate','PF200','20261',0)
+insert into teflow_param_config (param_code,param_name,param_value,[description],order_id) values ('commission_rate','commission rate','PF200','20259',0)
+insert into teflow_param_config (param_code,param_name,param_value,[description],order_id) values ('commission_rate','commission rate','PF200','20267',0)

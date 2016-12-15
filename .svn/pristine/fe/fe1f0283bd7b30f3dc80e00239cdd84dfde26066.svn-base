@@ -1,0 +1,20 @@
+
+
+IF  EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[TNOVAPRODUCTLIMIT]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+BEGIN
+
+	DROP TABLE [dbo].[TNOVAPRODUCTLIMIT]
+END
+
+CREATE TABLE [dbo].[TNOVAPRODUCTLIMIT](
+	[PRODCODE] [char](5) NOT NULL,
+	[PRODNAME] [char](50) NOT NULL,
+	[PRODDESC] [nvarchar](2000) NOT NULL,
+	[LIMITCODE] [varchar](50) NOT NULL,
+	[LIMITDESC] [nvarchar](2000) NOT NULL,
+	[ORDERBY] [int] NOT NULL,
+	[FORM_SYSTEM_ID] [decimal](18, 0) NOT NULL
+) ON [PRIMARY]
+
+
+

@@ -1,0 +1,41 @@
+--
+IF NOT EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[teflow_report_section]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+BEGIN
+
+CREATE TABLE [dbo].[teflow_report_section](
+	[report_system_id] [decimal](18, 0) NOT NULL,
+	[section_id] [varchar](50) NOT NULL,
+	[section_type] [varchar](2) NULL,
+	[section_remark] [varchar](100) NULL,
+	[table_name] [varchar](30) NULL,
+	[ORDER_ID] [varchar](100) NULL,
+	[section_url] [varchar](300) NULL,
+	[table_col] [int] NULL,
+	[page_group] [int]NULL
+	
+	CONSTRAINT [PK_teflow_report_section] PRIMARY KEY CLUSTERED 
+(
+	[report_system_id] ASC,
+	[section_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+END
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[teflow_report_section]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+ BEGIN  
+
+IF NOT EXISTS (SELECT TC.NAME FROM SYSOBJECTS TS, SYSCOLUMNS TC WHERE TS.ID = TC.ID AND TS.NAME = 'teflow_report_section' AND TC.NAME = 'PageColCount')
+                BEGIN
+                                ALTER TABLE DBO.teflow_report_section ADD PageColCount int NULL
+                END
+END
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[teflow_report_section]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+ BEGIN  
+
+IF NOT EXISTS (SELECT TC.NAME FROM SYSOBJECTS TS, SYSCOLUMNS TC WHERE TS.ID = TC.ID AND TS.NAME = 'teflow_report_section' AND TC.NAME = 'remarkSectionId')
+                BEGIN
+                                ALTER TABLE DBO.teflow_report_section ADD remarkSectionId [varchar](50) NULL
+                END
+END

@@ -1,0 +1,14 @@
+
+
+if not exists (select 1 from sys.columns where name='PREMMODAL' and object_id=(select object_id from sys.objects where name='TEFLOW_PRODUCTPLAN' and type='U'))
+begin
+	alter table TEFLOW_PRODUCTPLAN
+	add [PREMMODAL] [decimal](13, 5) NULL
+end
+
+
+if not exists (select 1 from sys.columns where name='BENAMTMB' and object_id=(select object_id from sys.objects where name='TEFLOW_PRODUCTPLAN' and type='U'))
+begin
+	alter table TEFLOW_PRODUCTPLAN
+	add [BENAMTMB] [decimal](13, 2) NULL
+end

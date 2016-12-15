@@ -1,0 +1,30 @@
+
+
+IF NOT EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[TPOLPDTNRT_TEMPLATE]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+BEGIN
+
+	DROP TABLE [NOVA].[TPOLPDTNRT_TEMPLATE]
+END
+
+CREATE TABLE [NOVA].[TPOLPDTNRT_TEMPLATE](
+	[FORM_SYSTEM_ID] DEC(18,0) NOT NULL,
+	[PKGPRDCD] [char](5) NOT NULL,
+	[COMPCODE] [decimal](4, 0) NOT NULL,
+	[POLNO] [char](10) NOT NULL,
+	[PRODCODE] [char](5) NOT NULL,
+	[EFFDATE] [datetime] NOT NULL,
+	[PROFRATE] [decimal](5, 4) NULL,
+	[EXPENRATE] [decimal](5, 4) NULL,
+	[MANUALRATE] [decimal](6, 4) NULL,
+	[BLENDRATE] [decimal](6, 4) NULL,
+	[CREDITRATE] [decimal](5, 4) NULL,
+	[TOTALRATE] [decimal](5, 4) NULL,
+	[RCDSTS] [char](1) NOT NULL,
+	[RCDUSRID] [char](8) NOT NULL,
+	[RCDDTSTMP] [datetime] NOT NULL,
+	[NOVAPKGPRDCD] CHAR(5) NULL
+) ON [PRIMARY]
+
+GO
+
+

@@ -1,0 +1,18 @@
+
+--begin tran
+
+if exists(select * from teflow_form_section_field where form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'FlexSZ_NBForm') and field_id = 'field_4_19' and event_onchange = '')
+begin
+	update teflow_form_section_field set event_onchange = 'pkgProductChange(this)' WHERE form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'FlexSZ_NBForm') and field_id = 'field_4_19'
+end
+
+if exists(select * from teflow_form_section_field where form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'FlexSZ_NBForm') and field_id = 'field_9_20' and event_onfocus = '')
+begin
+	update teflow_form_section_field set event_onfocus = 'loadMemPkgPdt(this)' WHERE form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'FlexSZ_NBForm') and field_id = 'field_9_20' and event_onfocus = ''
+end
+
+if exists(select * from teflow_form_section_field where form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'GCPA_Form') and field_id = 'field_4_1' and event_onchange = '')
+begin
+	update teflow_form_section_field set event_onchange = 'pkgProductChange(this)' WHERE form_system_id = (SELECT form_system_id FROM teflow_form where form_id = 'GCPA_Form') and field_id = 'field_4_1' and event_onchange = ''
+end
+--rollback tran

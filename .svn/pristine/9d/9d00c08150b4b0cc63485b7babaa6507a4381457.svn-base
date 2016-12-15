@@ -1,0 +1,236 @@
+
+      
+/*view of team*/
+CREATE VIEW tpma_team                                        
+AS                                                               
+SELECT team_code,
+       team_name COLLATE Chinese_PRC_CI_AS  as team_name,
+       status COLLATE Chinese_PRC_CI_AS  as status,
+       tl_id COLLATE Chinese_PRC_CI_AS  as tl_id,
+       subordinate,
+       '2100-1-1' as modified_date, 
+       '' COLLATE Chinese_PRC_CI_AS  as modified_staff
+FROM db_pmaprd.dbo.tpma_team                                     
+UNION ALL
+SELECT  team_code,
+	team_name COLLATE Chinese_PRC_CI_AS  as team_name,
+	status COLLATE Chinese_PRC_CI_AS  as status,
+	tl_id COLLATE Chinese_PRC_CI_AS  as tl_id,
+	superiors_code as subordinate,
+	modified_date,
+	modified_staff COLLATE Chinese_PRC_CI_AS  as modified_staff
+FROM	teflow_team
+
+/*view of user*/
+CREATE VIEW tpma_staffbasic
+AS
+SELECT 
+	User_No COLLATE Chinese_PRC_CI_AS  as User_No,
+	staff_code COLLATE Chinese_PRC_CI_AS as staff_code,
+	id_card  COLLATE Chinese_PRC_CI_AS as id_card,
+	staff_name COLLATE Chinese_PRC_CI_AS as staff_name,
+	status  COLLATE Chinese_PRC_CI_AS as status,
+    logon_id  COLLATE Chinese_PRC_CI_AS as logon_id,
+    team_code,
+    email COLLATE Chinese_PRC_CI_AS  as email,
+	null as virtual_team_code,
+	'' COLLATE Chinese_PRC_CI_AS as user_type,
+    '1900-1-1' as from_date,
+	'2100-1-1' as to_date,
+         title_id
+FROM db_pmaprd.dbo.tpma_StaffBasic a
+union all
+select 
+	'' COLLATE Chinese_PRC_CI_AS  as User_No,
+    u.staff_code COLLATE Chinese_PRC_CI_AS as staff_code,
+    '' COLLATE Chinese_PRC_CI_AS as id_card, 
+    u.staff_name COLLATE Chinese_PRC_CI_AS as staff_name,
+    u.status COLLATE Chinese_PRC_CI_AS as status,
+    u.logonid COLLATE Chinese_PRC_CI_AS as logon_id,
+    u.team_code,
+    u.email COLLATE Chinese_PRC_CI_AS  as email,
+    u.virtual_team_code,              
+    u.user_type COLLATE Chinese_PRC_CI_AS as user_type,
+    convert(varchar,u.from_date,101) as from_date,
+    convert(varchar,u.to_date,101) as to_date,
+    title_id
+from   teflow_user u
+/*---------------------------------------------------------*/
+CREATE VIEW tpma_staff
+AS
+SELECT 
+	User_No COLLATE Chinese_PRC_CI_AS  as User_No,
+	staff_code COLLATE Chinese_PRC_CI_AS as staff_code,
+	id_card  COLLATE Chinese_PRC_CI_AS as id_card,
+	staff_name COLLATE Chinese_PRC_CI_AS as staff_name,
+	status  COLLATE Chinese_PRC_CI_AS as status,
+    logon_id  COLLATE Chinese_PRC_CI_AS as logon_id,
+    team_code,
+    email COLLATE Chinese_PRC_CI_AS  as email,
+    null as virtual_team_code,
+	'' COLLATE Chinese_PRC_CI_AS as user_type,
+    '1900-1-1' as from_date,
+	'2100-1-1' as to_date,
+    title_id
+FROM db_pmaprd.dbo.tpma_staff
+union all
+select
+	'' COLLATE Chinese_PRC_CI_AS  as User_No,
+	u.staff_code COLLATE Chinese_PRC_CI_AS as staff_code,
+    '' COLLATE Chinese_PRC_CI_AS as id_card,
+    u.staff_name COLLATE Chinese_PRC_CI_AS as staff_name,
+    u.status COLLATE Chinese_PRC_CI_AS as status,
+    u.logonid COLLATE Chinese_PRC_CI_AS as logon_id,
+    u.team_code,
+    u.email COLLATE Chinese_PRC_CI_AS  as email,
+    u.virtual_team_code,              
+    u.user_type COLLATE Chinese_PRC_CI_AS as user_type,
+    convert(varchar,u.from_date,101) as from_date,
+    convert(varchar,u.to_date,101) as to_date,
+    title_id
+from   teflow_user u
+    
+/*View of Project*/
+CREATE VIEW dbo.tpma_project
+AS
+SELECT 
+	[prj_code]  COLLATE Chinese_PRC_CI_AS AS prj_code,
+	[chg_ctl_no] COLLATE Chinese_PRC_CI_AS AS chg_ctl_no ,
+	[prj_type]  COLLATE Chinese_PRC_CI_AS AS prj_type ,
+	[Region_code]  COLLATE Chinese_PRC_CI_AS AS Region_code ,
+	[company_no]  COLLATE Chinese_PRC_CI_AS AS company_no ,
+	[appl]  COLLATE Chinese_PRC_CI_AS AS appl ,
+	[rqt] COLLATE Chinese_PRC_CI_AS AS rqt ,
+	[rqt_email]  COLLATE Chinese_PRC_CI_AS AS rqt_email ,
+	[pln_date]  ,
+	[prj_desc]  COLLATE Chinese_PRC_CI_AS AS prj_desc ,
+	[prj_dictor]  COLLATE Chinese_PRC_CI_AS AS prj_dictor ,
+	[prj_dictor_email]  COLLATE Chinese_PRC_CI_AS AS prj_dictor_email ,
+	[prj_ld_id] COLLATE Chinese_PRC_CI_AS AS prj_ld_id ,
+	[prj_ld_id_card_no] COLLATE Chinese_PRC_CI_AS AS prj_ld_id_card_no ,
+	[priority]  COLLATE Chinese_PRC_CI_AS AS priority ,
+	[charge_type]  COLLATE Chinese_PRC_CI_AS AS charge_type ,
+	[desired_cmpl_date] ,
+	[est_strt_date],
+	[est_cmpl_date] ,
+	[est_sys_hour]  ,
+	[est_sys_cost] ,
+	[est_prg_hour] ,
+	[est_prg_cost]  ,
+	[est_tot_hour]  ,
+	[est_tot_cost] ,
+	[machine_time]  ,
+	[infr_fee] ,
+	[prj_tot_est_hour] ,
+	[prj_tot_est_cost]  ,
+	[receiv_by]  COLLATE Chinese_PRC_CI_AS AS receiv_by ,
+	[receiv_by_email]  COLLATE Chinese_PRC_CI_AS AS receiv_by_email ,
+	[receiv_date] ,
+	[est_prepar_by] COLLATE Chinese_PRC_CI_AS AS est_prepar_by ,
+	[est_prepar_by_ID_card]  COLLATE Chinese_PRC_CI_AS AS est_prepar_by_ID_card ,
+	[est_prepar_date]  ,
+	[mis_aidc_appr_by] COLLATE Chinese_PRC_CI_AS AS mis_aidc_appr_by ,
+	[mis_aidc_appr_by_email]  COLLATE Chinese_PRC_CI_AS AS mis_aidc_appr_by_email ,
+	[mis_aidc_appr_date]  ,
+	[apprv_rej_remark] COLLATE Chinese_PRC_CI_AS AS apprv_rej_remark ,
+	[usr_appr]  COLLATE Chinese_PRC_CI_AS AS usr_appr ,
+	[usr_appr_email]  COLLATE Chinese_PRC_CI_AS AS usr_appr_email ,
+	[usr_appr_date]  ,
+	[atl_cost] ,
+	[atl_start]  ,
+	[atl_finish]  ,
+	[atl_hour] ,
+	[cmpl_by]  COLLATE Chinese_PRC_CI_AS cmpl_by ,
+	[cmpl_by_ID_card] COLLATE Chinese_PRC_CI_AS AS cmpl_by_ID_card ,
+	[cmpl_by_date]  ,
+	[review_by]  COLLATE Chinese_PRC_CI_AS AS review_by ,
+	[review_by_email] COLLATE Chinese_PRC_CI_AS AS review_by_email ,
+	[review_by_date] ,
+	[status]  COLLATE Chinese_PRC_CI_AS AS status ,
+	[desc_detail]  COLLATE Chinese_PRC_CI_AS AS desc_detail ,
+	[close_date]  ,
+	[generate_pacii_data]  COLLATE Chinese_PRC_CI_AS AS generate_pacii_data ,
+	[charge_rate_type_id] ,
+	[est_data_center_hour]  ,
+	[est_data_center_cost]  ,
+	[upload_to_pacii]  COLLATE Chinese_PRC_CI_AS  AS upload_to_pacii ,
+	[lc_type_code] COLLATE Chinese_PRC_CI_AS AS lc_type_code,
+	'1900-1-1'  As Prj_update_date,
+        ''  COLLATE Chinese_PRC_CI_AS AS Prj_update_user
+FROM db_pmaprd.dbo.tpma_project
+UNION ALL
+SELECT 
+	[prj_code]	COLLATE Chinese_PRC_CI_AS AS prj_code,
+	'' 		COLLATE Chinese_PRC_CI_AS AS chg_ctl_no ,
+	[prj_type]  	COLLATE Chinese_PRC_CI_AS AS prj_type ,
+	''		COLLATE Chinese_PRC_CI_AS AS Region_code ,
+	''		COLLATE Chinese_PRC_CI_AS AS company_no ,
+	[prj_name]	COLLATE Chinese_PRC_CI_AS AS appl ,
+	''		COLLATE Chinese_PRC_CI_AS AS rqt ,
+	''		COLLATE Chinese_PRC_CI_AS AS rqt_email ,
+	[Prj_start_date] As pln_date ,
+	[prj_desc]  	COLLATE Chinese_PRC_CI_AS AS prj_desc ,
+	''  		COLLATE Chinese_PRC_CI_AS AS prj_dictor ,
+	''		COLLATE Chinese_PRC_CI_AS AS prj_dictor_email ,
+	[prj_ld_id] 	COLLATE Chinese_PRC_CI_AS AS prj_ld_id ,
+	''		COLLATE Chinese_PRC_CI_AS AS prj_ld_id_card_no ,
+	''		COLLATE Chinese_PRC_CI_AS AS priority ,
+	''  		COLLATE Chinese_PRC_CI_AS AS charge_type ,
+	'2100-1-1'			          AS desired_cmpl_date ,
+	'2100-1-1'			          AS est_strt_date,
+	'2100-1-1'				  AS est_cmpl_date ,
+	0 					  AS est_sys_hour  ,
+	0 					  AS est_sys_cost,
+	0 					  AS est_prg_hour ,
+	0 					  AS est_prg_cost  ,
+	0 					  AS est_tot_hour  ,
+	0 					  AS est_tot_cost ,
+	0 					  AS machine_time  ,
+	0 					  AS infr_fee ,
+	0 					  AS prj_tot_est_hour ,
+	0 					  AS prj_tot_est_cost  ,
+	''   		COLLATE Chinese_PRC_CI_AS AS receiv_by ,
+	''		COLLATE Chinese_PRC_CI_AS AS receiv_by_email ,
+	'2100-1-1' 				  AS receiv_date,
+	''		COLLATE Chinese_PRC_CI_AS AS est_prepar_by ,
+	''  		COLLATE Chinese_PRC_CI_AS AS est_prepar_by_ID_card ,
+	'2100-1-1'				  AS est_prepar_date  ,
+	'' 		COLLATE Chinese_PRC_CI_AS AS mis_aidc_appr_by ,
+	'' 		COLLATE Chinese_PRC_CI_AS AS mis_aidc_appr_by_email ,
+	'2100-1-1' 				  AS mis_aidc_appr_date  ,
+	'' 		COLLATE Chinese_PRC_CI_AS AS apprv_rej_remark ,
+	''		COLLATE Chinese_PRC_CI_AS AS usr_appr ,
+	''		COLLATE Chinese_PRC_CI_AS AS usr_appr_email ,
+	'2100-1-1'				  AS usr_appr_date  ,
+	0 					  AS atl_cost ,
+	'2100-1-1'				  AS atl_start  ,
+	'2100-1-1'				  AS atl_finish  ,
+	0					  AS atl_hour ,
+	''  		COLLATE Chinese_PRC_CI_AS AS cmpl_by ,
+	'' 		COLLATE Chinese_PRC_CI_AS AS cmpl_by_ID_card ,
+	'2100-1-1'				  AS cmpl_by_date  ,
+	''  		COLLATE Chinese_PRC_CI_AS AS review_by ,
+	'' 		COLLATE Chinese_PRC_CI_AS AS review_by_email ,
+	'2100-1-1'			 	  AS review_by_date ,
+	[status]  	COLLATE Chinese_PRC_CI_AS AS status ,
+	''		COLLATE Chinese_PRC_CI_AS AS desc_detail ,
+	'2100-1-1' 			          AS close_date  ,
+	''		COLLATE Chinese_PRC_CI_AS AS generate_pacii_data ,
+	0					  AS charge_rate_type_id ,
+	0					  AS est_data_center_hour  ,
+	0					  AS est_data_center_cost  ,
+	''  		COLLATE Chinese_PRC_CI_AS AS upload_to_pacii ,
+	''     		COLLATE Chinese_PRC_CI_AS AS lc_type_code,        
+        [Prj_update_date]  			  As Prj_update_date,
+        [Prj_update_user] COLLATE Chinese_PRC_CI_AS AS Prj_update_user
+FROM	teflow_projects
+
+/*view of titles*/
+CREATE VIEW dbo.tpma_title
+AS
+SELECT title_id, 
+  abrev COLLATE Chinese_PRC_CI_AS  as abrev, 
+  description COLLATE Chinese_PRC_CI_AS  as description, 
+  title_level COLLATE Chinese_PRC_CI_AS  as title_level, 
+  active COLLATE Chinese_PRC_CI_AS  as active
+FROM db_pmaprd.dbo.tpma_title

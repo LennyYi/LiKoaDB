@@ -1,0 +1,3 @@
+
+UPDATE teflow_param_config SET param_value = 'F:\Cmp_Prj\Common1\9_SourceCode\9.01_Dev\QAAU_UPExe\Batch\NovaUpload' WHERE param_code = 'upload_file_dir'
+UPDATE teflow_param_config SET param_value = 'F:\Cmp_Prj\Common1\9_SourceCode\9.01_Dev\QAAU_UPExe\Batch\NovaUpload\bak' WHERE param_code = 'upload_file_dir_bak'

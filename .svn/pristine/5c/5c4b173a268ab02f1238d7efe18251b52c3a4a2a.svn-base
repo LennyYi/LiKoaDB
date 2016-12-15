@@ -1,0 +1,59 @@
+if exists (select 1 from dbo.sysobjects where id = object_id(N'[dbo].[search_details_bill]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+     drop procedure [dbo].[search_details_bill]
+GO
+
+/*********************** REVISION LOG: ***********************************
+Version			Date			Revised by				Remark
+1.0				20150304		Colin					initial
+**************************************************************************/
+
+
+CREATE PROCEDURE [dbo].[search_details_bill]
+(@sectionId varchar(20),
+@policyNo varchar(50))
+AS
+BEGIN
+SET NOCOUNT ON
+	if(@sectionId = 'bill_pay')
+	begin
+		SELECT  POLNO = @policyNo,
+            ProductCode = t1.PRODCODE ,
+            ProductName = t3.PRODSHORT,
+            SubOffCode = t1.SUBOFFCODE,
+            SubOffName = t4.SUBOFFNAME,
+            BillToDay = ISNULL(t1.BILLTODATE,'1900-01-01'),
+            PayToDay = ISNULL(t2.PAIDTODATE,'1900-01-01')
+        FROM TPOLPDTSUB t1 
+    	inner join (select POLNO,SUBOFFCODE,PRODCODE,MAX(PAIDTODATE) as PAIDTODATE from TPOLFINCL 
+            where  POLNO = @policyNo 
+        GROUP BY POLNO,SUBOFFCODE,PRODCODE ) t2
+        on  t1.POLNO = t2.POLNO
+        and t1.SuboffCode = t2.SuboffCode
+        and t1.PRODCODE = t2.PRODCODE
+        and t1.POLNO = @policyNo 
+	    INNER JOIN TPOLICY T5 ON T1.POLNO = T5.POLNO AND T5.POLNO = @policyNo 
+	    LEFT JOIN TPRODUCT T3 ON T1.PRODCODE = T3.PRODCODE
+	    LEFT JOIN TCLNTSUB T4 ON T1.SUBOFFCODE = T4.SUBOFFCODE AND T4.CLNTCODE = T5.CLNTCODE  
+	end
+	
+	if(@sectionId = 'bill_list')
+	begin
+		SELECT  BillNo =  TB.BILLNO, SubOffice = TB.SUBOFFCODE, BillIssueDate = TB.BISSDATE, BillCurrency = MAX(TCr.CURSYMBOL),
+                BillType = CASE WHEN TB.BILLNO LIKE 'EST%' THEN 'Estimate' WHEN TB.FMTBILLIND = 'O' AND TB.RCDSTS = 'A'  THEN 'Official'
+                             WHEN TB.FMTBILLIND = 'D' AND TB.RCDSTS = 'D' THEN 'Draft' WHEN TB.FMTBILLIND = 'O' AND TB.RCDSTS = 'D'  AND (NOT TB.STATUS='R' ) THEN 'Deleted' WHEN TB.FMTBILLIND = 'O' AND TB.RCDSTS = 'D' AND TB.STATUS='R'  THEN 'Replaced' END,
+                BillControl = TB.BILLSEQNO,  RenewFirstBill = case rtrim(TB.RenewFirstInd) when 'Y' then 'Y' else '' end,   ChequeDate = isnull(TB.CHEQUEDATE,''),   FR = MAX(TP.FYRENCODE),
+                TotalBilledAmt = SUM(ISNULL(TP.PREMDU, 0) + ISNULL(TP.PREMDUAD, 0) + ISNULL(TP.PREMTAX, 0) + ISNULL(TP.STMPDUTY, 0) - ISNULL(TP.EXPREFD, 0) - ISNULL(TP.PREMBIND, 0)),
+                PaidAmt = SUM(ISNULL(TP.PAIDAMT, 0)),
+                CurrentOSAmt = SUM(ISNULL(TP.PREMDU, 0) + ISNULL(TP.PREMDUAD, 0) + ISNULL(TP.PREMTAX, 0) + ISNULL(TP.STMPDUTY, 0) - ISNULL(TP.EXPREFD, 0) - ISNULL(TP.PREMBIND, 0) - ISNULL(TP.PAIDAMT, 0)),
+                BillDueDate = isnull(MAX(TP.BILLPRDFR),''),  BillPaidDate = isnull(TB.PAIDDATE,''),  GrossPremium = SUM(ISNULL(TP.PREMDU, 0) + ISNULL( TP.PREMDUAD, 0)),
+                PremiumTax = SUM(ISNULL(TP.PREMTAX, 0)), AdvanceExpRefund = SUM(ISNULL(TP.EXPREFD, 0) - ISNULL(TP.PRYREXPRFD,0)),
+                PrYrsExpRefund = SUM(ISNULL(TP.PRYREXPRFD,0)), BinderPrenium = SUM(ISNULL(TP.PREMBIND, 0)),  BilledCommission = SUM(ISNULL(TP.COMMDU, 0)), BilledAdminFee = SUM(ISNULL(ADMINFEE,0)),
+                NetDueAmount = SUM(ISNULL(TP.PREMDU, 0) + ISNULL(TP.PREMDUAD, 0) + ISNULL(TP.PREMTAX, 0) + ISNULL(TP.STMPDUTY, 0) - ISNULL(TP.EXPREFD, 0) - ISNULL(TP.PREMBIND, 0) - ISNULL(TP.COMMDU, 0) - ISNULL(TP.ADMINFEE,0))
+        from   	TBILDETP TP
+        inner join TBILDETB TB on   TP.BILLNO	= TB.BILLNO  AND TP.SUBOFFCODE	= TB.SUBOFFCODE AND TB.COMPCODE	= TP.COMPCODE AND TB.CLNTCODE	= TP.CLNTCODE  AND	TP.POLNO	= @policyNo AND TB.BISSDATE	IS NOT NULL
+        inner join  TCURCTBL TCr on	TB.CURCCODE	= TCr.CURCCODE
+        left join TBILDLTLOG TDel on TDel.SUBOFFCODE = TB.SUBOFFCODE AND     TDel.BILLNO     = TB.BILLNO AND     TDel.POLNO	= @policyNo  AND     TDel.PRODCODE	= TP.PRODCODE AND     TDel.BILLPRDFR  = TP.BILLPRDFR AND     TDel.BILLPRDTO	= Tp.BILLPRDTO 
+        group by TB.BILLNO, TB.SUBOFFCODE, TB.BILLSEQNO, TB.BISSDATE, TB.CHEQUEDATE, TB.PAIDDATE, TB.CURCCode,TB.FMTBILLIND,TB.RCDSTS,TB.STATUS,TDel.DLTRSN, TB.RenewFirstInd
+
+	end
+END

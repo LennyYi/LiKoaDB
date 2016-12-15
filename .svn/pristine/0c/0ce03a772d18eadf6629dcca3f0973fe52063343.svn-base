@@ -1,0 +1,9 @@
+--Sting Wu 2015-03-12
+
+update teflow_form_section_field set default_value = '',event_onfocus= 'loadMemPkgPdt(this)',is_required = 0 where form_system_id = '20267'  and field_id = 'field_9_20'
+
+update teflow_form_section_field set default_value = '',event_onfocus= 'loadMemPkgPdt(this)',is_required = 0 where form_system_id = '20259'  and field_id = 'field_9_20'
+
+update teflow_form_section_field set is_required = 0 where form_system_id = '20267'  and field_id = 'field_9_21'
+
+update teflow_form_section_field set is_required = 0 where form_system_id = '20259'  and field_id = 'PlanCodeMem_id'

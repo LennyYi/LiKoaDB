@@ -1,0 +1,77 @@
+if exists (select 1 from dbo.sysobjects where id = object_id(N'[dbo].[poef_wkf_getFlowStatus]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+     drop procedure [dbo].[poef_wkf_getFlowStatus]
+GO
+
+CREATE PROCEDURE [dbo].[poef_wkf_getFlowStatus]
+(@request_no varchar(30),
+@form_system_id int)
+
+AS
+BEGIN
+SET NOCOUNT ON
+
+DECLARE @flow_id int
+
+SELECT @flow_id= flow_id FROM teflow_wkf_define WHERE form_system_id=@form_system_id
+
+If exists( select 1 from teflow_wkf_process t1 
+	inner join teflow_wkf_detail t2 on t1.node_id = t2.node_id 
+		and t2.flow_id =@flow_id 
+		and t1.flow_id=t2.flow_id 
+		and node_alias like '%ErrorHandle%'
+		and t1.request_no=@request_no)
+begin
+	select DISTINCT 1 no1,d.node_alias,
+	d.node_id as node_id,
+	d.node_name as ndName,
+	(case when p2.node_id is not null then p2.request_no else p.request_no end) request_no,
+	(case when p.request_no is not null 
+		or p2.request_no is not null then 1 else 0 end) curNode
+		from teflow_wkf_detail d 
+	left join teflow_wkf_process_trace p 
+		on d.flow_id = p.flow_id and p.request_no = @request_no
+		AND d.node_id = P.node_id
+	left join teflow_wkf_process p2 on d.node_id = P2.node_id
+		and d.flow_id = p2.flow_id
+		and d.node_alias like '%ErrorHandle%' 
+		and p2.request_no = @request_no
+		where  d.flow_id=@flow_id AND d.node_alias<>'' 
+		order by curNode desc,node_alias 
+
+	GOTO EXITS
+end
+
+
+SELECT * INTO  #tempTable1 FROM teflow_wkf_detail where flow_id=@flow_id and  node_alias not like '%ErrorHandle%' and node_alias<>'' order by node_alias;
+
+if exists(select 1 from teflow_wkf_process where request_no = @request_no and node_id=-1)
+begin
+	select cast(left(d.node_alias,2) AS int) as no1,d.node_alias,d.node_id,d.node_name ndName,p.request_no,1 curNode
+	from teflow_wkf_detail d 
+	left join teflow_wkf_process p 
+	on d.flow_id = p.flow_id and p.request_no = @request_no
+	where d.flow_id=@flow_id  and d.node_alias not like '%ErrorHandle%'  and d.node_alias<>'' 
+	order by curNode desc,node_alias 
+
+end
+else
+begin
+
+	select cast(left(d.node_alias,2) AS int) as no1,d.node_alias,d.node_id,d.node_name ndName,p.request_no,
+	(case when cast(left(d.node_alias,2) AS int) <= (select cast(left(a.node_alias,2) as int) from teflow_wkf_detail a 
+							inner join teflow_wkf_process b on  a.node_id = b.node_id 
+									and a.flow_id = b.flow_id 
+									and b.request_no = @request_no ) then '1' else null end) curNode
+	from teflow_wkf_detail d 
+	left join teflow_wkf_process p 
+	on d.node_id = p.node_id and d.flow_id = p.flow_id and p.request_no = @request_no
+	where d.flow_id=@flow_id  and d.node_alias not like '%ErrorHandle%'  and d.node_alias<>'' 
+	order by curNode desc,node_alias 
+end
+
+DROP TABLE #tempTable1;
+
+EXITS:
+
+
+END

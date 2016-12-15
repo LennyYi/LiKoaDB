@@ -1,0 +1,6 @@
+-- 20150326 Justin Bin 
+begin tran
+delete from TSYSPARMH WHERE  PARMDESC='NOVASP' and PARMTYPE = '20267' and parmvalue='0'
+insert into TSYSPARMH (PARMDESC,PARMVALUE,PARMTYPE,VALUEUSAGE,RCDUSRID,RCDDTSTMP ) values ('NOVASP','0','20267','USPGNOVAGENTPOLPDTFLAK','ASNPGE6',getdate())
+
+commit tran

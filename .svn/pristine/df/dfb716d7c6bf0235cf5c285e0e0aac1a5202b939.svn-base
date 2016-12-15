@@ -1,0 +1,129 @@
+IF EXISTS (SELECT 1 FROM SYSOBJECTS WHERE ID = OBJECT_ID('dbo.NovaUspGCPAConvert') AND sysstat & 0xf = 4)
+	drop procedure dbo.NovaUspGCPAConvert
+GO
+
+CREATE PROCEDURE dbo.NovaUspGCPAConvert
+(	@cTRANDATE		CHAR(10), 
+	@form_system_id		VARCHAR(10),
+	@request_no		VARCHAR(30),
+	@staff_code		VARCHAR(10),
+	@cRETCODE	CHAR(4) OUTPUT,
+	@cRETMESSAGE    VARCHAR(MAX) OUTPUT
+) AS
+/*******************************************************************
+	COMPASS 2000 USER STORED PROCEDURE
+
+	NovaUspGCPAConvert.SQL - Prepare xml for transfer data
+        
+        PROCESSING DETAILS:
+        Prepare XML file for 
+			
+	AUTHOR      :     Sting Wu
+	DATE	    :     11/12/2014
+	PIRNO	    :	  
+
+	REVISION LOG:
+	VERSION	  PIRNO		PROGRAMMER	REMARK		DATE		PURPOSE
+        5.0	  NOVA		Sting Wu				11/12/2014	Initial Version
+********************************************************************/
+/*error handling variable section */
+BEGIN
+
+begin try
+
+	DELETE FROM teflow_20267_product WHERE request_no=@request_no 
+	DELETE FROM teflow_20267_productplan WHERE request_no=@request_no 
+
+	DECLARE @cProdcode CHAR(5) 
+	DECLARE	@cPlancode CHAR(3)
+	DECLARE @i INT
+
+	insert teflow_20267_product (PKGPRDCD, PRODCODE,ID, REQUEST_NO)
+	select distinct field_4_1,left(prodcode,5),0,request_no 
+	from teflow_20267_4 unpivot (prodcode for prodField in (field_4_4, 
+	field_4_5,field_4_6,field_4_7))b
+	where request_no=@request_no AND prodcode<>''
+
+
+	SELECT @i = 1
+
+	declare cur_converProduct cursor for 
+
+	select  PRODCODE
+	from teflow_20267_product where request_no = @request_no
+	order by PRODCODE
+
+	open cur_converProduct	
+
+	FETCH NEXT FROM cur_converProduct INTO @cProdcode
+	WHILE (@@FETCH_STATUS = 0)
+	BEGIN
+
+
+		UPDATE teflow_20267_product SET id = @i where  request_no = @request_no and  PRODCODE =@cProdcode
+
+		SELECT @i = @i+1
+
+		FETCH NEXT FROM cur_converProduct INTO @cProdcode
+	END
+
+	CLOSE cur_converProduct 
+	DEALLOCATE cur_converProduct  
+
+
+	insert teflow_20267_productplan
+	select field_4_1,field_4_2,field_4_3,left(prodcode,5),field_4_8,field_4_9,id,request_no 
+	from teflow_20267_4 unpivot (prodcode for prodField in (field_4_4, 
+	field_4_5,field_4_6,field_4_7))b
+	where request_no=@request_no AND prodcode<>''
+
+
+	SELECT @i = 1
+
+	declare cur_converProductPlan cursor for 
+
+	select  PRODCODE,PLANCODE
+	from teflow_20267_productplan where request_no = @request_no
+	order by PLANCODE,PRODCODE
+
+	open cur_converProductPlan	
+
+	FETCH NEXT FROM cur_converProductPlan INTO @cProdcode, @cPlancode
+	WHILE (@@FETCH_STATUS = 0)
+	BEGIN
+
+
+		UPDATE teflow_20267_productplan SET id = @i where  request_no = @request_no and  PRODCODE =@cProdcode and PLANCODE=@cPlancode
+
+		SELECT @i = @i+1
+
+		FETCH NEXT FROM cur_converProductPlan INTO @cProdcode, @cPlancode
+	END
+
+	CLOSE cur_converProductPlan 
+	DEALLOCATE cur_converProductPlan  
+
+
+end try
+begin catch
+	
+	DECLARE @ErrorMessage NVARCHAR(4000);  
+	DECLARE @ErrorSeverity INT;  
+	DECLARE @ErrorState INT;  
+	
+	SELECT @cRETCODE = '9999'
+
+	SELECT @ErrorMessage = ERROR_MESSAGE(),  
+	@ErrorSeverity = ERROR_SEVERITY(),  
+	@ErrorState = ERROR_STATE(); 
+	
+	INSERT INTO TNovaErrlogTran
+	select @request_no,'NovaUspGCPAConvert',@ErrorMessage,@staff_code,GETDATE()
+
+	GOTO EXIT_WINDOW
+
+end catch
+
+EXIT_WINDOW:
+
+END

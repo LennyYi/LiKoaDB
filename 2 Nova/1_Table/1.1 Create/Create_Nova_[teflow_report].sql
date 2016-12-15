@@ -1,0 +1,27 @@
+--
+IF NOT EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[teflow_report]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+BEGIN
+
+CREATE TABLE [dbo].[teflow_report](
+	[report_system_id] [decimal](18, 0) IDENTITY(1,1) NOT NULL,
+	[report_id] [varchar](50) NOT NULL,
+	[report_name] [varchar](100) NULL,
+	[report_type] [varchar](2) NULL,
+	[display_type] [varchar](2) Null,
+	[report_subtype] [varchar](10) NULL,
+	[report_description] [varchar](500) NULL,
+	[status] [varchar](1) NULL,
+	[create_date] [datetime] NULL,
+	[action_type] [char](2) NULL,
+	[action_message] [varchar](200) NULL,
+	[org_id] [char](6) NULL,
+	[pre_validation_url] [varchar](200) NULL,
+	[after_save_url] [varchar](200) NULL,
+	[Report_image] [varchar](200) NULL,
+	 CONSTRAINT [PK_teflow_report] PRIMARY KEY CLUSTERED 
+(
+	[report_system_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+END

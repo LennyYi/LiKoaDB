@@ -1,0 +1,146 @@
+IF EXISTS (SELECT * FROM SYSOBJECTS WHERE ID = object_id('dbo.UspGNOVAPaySD') and sysstat & 0xf = 4)
+	DROP PROCEDURE dbo.UspGNOVAPaySD
+GO
+
+CREATE PROCEDURE dbo.UspGNOVAPaySD
+( 	
+	@cTRANDATE CHAR(10), 
+	@request_no VARCHAR(30),
+	@staff_code VARCHAR(10),
+	@cUSERID CHAR(8),
+	@cCALLTYPE CHAR(1), -- O - Online, B -- Batch
+	@cRETCODE CHAR(4) OUTPUT,
+	@cRETMESSAGE NVARCHAR(MAX) OUTPUT
+)
+AS
+/*******************************************************************
+	AIA CONFIDENTIAL MARCH 2000
+
+	COMPASS 2000 USER STORED PROCEDURE
+
+	STORED PROCEDURE USED FOR Calculate type 2 stampt duty - AU
+	
+	AUTHOR		:	Hinson Liang
+	DATE		:	01/15/2015
+	
+REVISION LOG:
+PDCF		PROGRAMMER	DATE		CTRL No.	PURPOSE
+------------------------------------------------------------------------------------------
+			Hinson.L	01/15/2015				Initial
+*********************************************************************/
+
+DECLARE @dMonthEnd DATETIME
+DECLARE @nLstMaxSEQNO DECIMAL(10,0) 
+DECLARE @nGStampDutyCollectMonth DECIMAL(6,0)	--YYYYMM of current monthend date
+DECLARE @nGCurrentMonth DECIMAL(6,0)			--YYYYMM of current date
+DECLARE @cCLNTCODE CHAR(05)
+DECLARE @dtGDateNow DATETIME
+DECLARE @dtGCutOffDate DATETIME
+DECLARE @cTYPE CHAR(01)
+DECLARE @dBILLPRDFR DATETIME
+DECLARE @cPOLNO CHAR(10)
+
+SELECT @cPOLNO = POLNO, @dBILLPRDFR = BILLPRDFR FROM TNOVA_SDRequest WHERE NOVAREQNO = @request_no
+
+SELECT @cTYPE = 2
+SELECT @dtGDateNow = CONVERT(CHAR(08),GETDATE(),112)
+SELECT @dMonthEnd = DATEADD(DD,-1,CONVERT(DATETIME,CONVERT(CHAR(06),DATEADD(MM,1,@dBILLPRDFR),112) + '01'))
+SELECT @nGCurrentMonth = DATEPART(YY,GETDATE()) * 100 + DATEPART(MM,GETDATE())
+SELECT @nGStampDutyCollectMonth = DATEPART(YY,@dMonthEnd) * 100 + DATEPART(MM,@dMonthEnd)
+SELECT @cCLNTCODE = CLNTCODE FROM TPOLICY WHERE POLNO = @cPOLNO
+
+select @dtGCutOffDate = PARMVALUE FROM Tsysparmh
+ where PARMDESC     = 'SD_CUTOFFDAT'
+   and isdate(PARMVALUE) = 1
+
+create table #SDLst
+(
+	SEQNO	DECIMAL(10,0) Identity(1,1),
+	TYPE	        Char	(1)	Null,	
+	--PREMGROWPCT	Decimal	(5,4)	Null,		
+	[PRODCODE] [char] (5) NOT NULL ,
+	[PRODSHORT] [char] (10) NULL ,
+	[STATE] [char] (3) NULL ,
+	[ApportionPCT] [decimal](5, 4) NULL ,
+	[StmpDutyPCT] [decimal](5, 4) NULL ,
+	[CALCBASIS] [char] (3) NULL ,
+	[NETOFFPCT] [decimal](6, 4) NULL ,
+	[PREMPAID] [decimal](13, 2) NULL ,
+	[PREMGROWTH] [decimal](13, 2) NULL ,
+	[PREMANNGROW] [decimal](13, 2) NULL ,
+	[STMPDUTYPAID] [decimal](13, 2) NULL ,
+	[FYRENCODE] [char] (1) NULL
+)
+
+--1. Populate SD detail (Same as online click "Search")
+INSERT #SDLst
+(TYPE,PRODCODE,PRODSHORT,STATE,ApportionPCT,StmpDutyPCT,CALCBASIS,NETOFFPCT,PREMPAID,PREMGROWTH,PREMANNGROW,STMPDUTYPAID,FYRENCODE)
+SELECT @cTYPE,PRODCODE,PRODSHORT,STATE,ApportionPCT,StmpDutyPCT,CALCBASIS,NETOFFPCT,PREMPAID,PREMPAID,PREMANNGROW,STMPDUTYPAID,FYRENCODE FROM TNOVA_SDPremSum
+WHERE NOVAREQNO = @request_no
+
+--2. Pay SD (Same as online click "Pay")
+--20150217 BEGIN: This table only use for type 3 and 4
+--DELETE TSTMPDUTYPRD_TRX WHERE POLNO = @cPOLNO AND ACDATE = @nGStampDutyCollectMonth AND PAIDMTH = @nGCurrentMonth
+--20150217 END
+
+UPDATE TSTMPDUTYPYMT_TPATRX SET RCDSTS = 'D', RcdUsrId = @staff_code, RcdDtStmp = GETDATE() WHERE POLNO = @cPOLNO AND ACDATE = @nGStampDutyCollectMonth AND PAIDMTH = @nGCurrentMonth
+UPDATE TSTMPDUTYDTL_TPATRX SET RCDSTS = 'D', RcdUsrId = @staff_code, RcdDtStmp = GETDATE() WHERE POLNO = @cPOLNO AND ACDATE = @nGStampDutyCollectMonth AND PAIDMTH = @nGCurrentMonth
+
+SELECT @nLstMaxSEQNO = max(SEQNO) FROM TSTMPDUTYDTL_TPATRX WHERE POLNO = @cPOLNO
+SELECT @nLstMaxSEQNO = ISNULL(@nLstMaxSEQNO,0)
+
+INSERT TSTMPDUTYDTL_TPATRX
+(POLNO,CLNTCODE,PRODCODE,STATE,ApportionPCT,StmpDutyPCT,CALCBASIS,NETOFFPCT,PREMPAID,PREMGROWTH,PREMANNGROW,STMPDUTYPAID,FYRENCODE, RCDSTS, RCDUSRID, 
+		RCDDTSTMP,TRANDATE,SEQNO,PAIDMTH,ACDATE)
+SELECT @cPOLNO,@cCLNTCODE,PRODCODE,STATE,ApportionPCT,StmpDutyPCT,CALCBASIS,NETOFFPCT,PREMPAID,PREMGROWTH,PREMANNGROW,STMPDUTYPAID,FYRENCODE, 'A', @staff_code, 
+		GETDATE(),@dtGDateNow,@nLstMaxSEQNO + SEQNO,@nGCurrentMonth,@nGStampDutyCollectMonth FROM #SDLst
+
+
+insert TSTMPDUTYPYMT_TPATRX(TRANDATE,SEQNO,TYPE,COMPCODE,CLNTCODE,POLNO,PRODCODE,PYMTNO,BILLNO,BILLPRDFR,BILLPRDTO,BILLMODE,PAIDDATE,FYRENCODE,PREMPAID,PAIDMTH,ACDATE,RCDSTS,RCDUSRID,RCDDTSTMP) 
+select distinct td.TRANDATE,td.SEQNO,@cTYPE,
+tp.COMPCODE,
+td.CLNTCODE,td.POLNO,td.PRODCODE,ts.PYMTNO,tpbil.BILLNO,tb.BILLPRDFR,tb.BILLPRDTO,tpp.BILLMODE,
+tpba.PAIDDATE,td.FYRENCODE,tpba.PAIDAMT,@nGCurrentMonth,@nGStampDutyCollectMonth,
+'A', @staff_code, GETDATE()
+from TPREMALTRN ts, TSTMPDUTYDTL_TPATRX td, TPYMTBIL tpbil, TPYMTBAS tpba, TBILDETP tb, tpolicy tp, TPOLPDT tpp
+where td.POLNO       =  @cPOLNO
+and ts.POLNO       =  @cPOLNO
+and td.PRODCODE    =  ts.PRODCODE
+and ts.PYMTTRAN in ('A','B','C','D')
+AND ts.RCDSTS      =  'A'
+AND ts.RCDDTSTMP   >= @dtGCutOffDate
+AND ts.ACDATE      =  @nGStampDutyCollectMonth
+AND td.ACDATE      =  @nGStampDutyCollectMonth
+AND td.PAIDMTH      =  @nGCurrentMonth
+AND ts.PYMTNO not in (
+				select PYMTNO
+					from TSTMPDUTYPYMT_TPATRX
+					WHERE RCDSTS       =  'A'
+				)
+and tpbil.PYMTNO     =  ts.PYMTNO
+and tpba.PYMTNO     =  ts.PYMTNO
+and tp.POLNO       =  @cPOLNO
+and tb.BILLNO      =  tpbil.BILLNO
+and tb.POLNO       =  @cPOLNO
+and tb.COMPCODE    =  tp.COMPCODE
+and tb.CLNTCODE    =  tp.CLNTCODE
+and tb.PRODCODE    =  td.PRODCODE
+and tpp.POLNO       =  @cPOLNO
+and tpp.PRODCODE    =  ts.PRODCODE
+AND tpp.EFFDATE   = (
+				SELECT MAX(TPLPD2.EFFDATE)
+				FROM TPOLPDT TPLPD2
+				WHERE TPLPD2.POLNO    = @cPOLNO
+				AND TPLPD2.PRODCODE = tpp.PRODCODE
+				and TPLPD2.CHGEFFDT <= @dMonthEnd
+				AND TPLPD2.RCDSTS   = 'A'
+				)
+AND td.RCDSTS      =  'A'
+
+UPDATE TNOVA_SDRequest SET ApproveDATE = GETDATE() WHERE NOVAREQNO = @request_no
+
+DROP TABLE #SDLst
+
+RETURN
+
+

@@ -1,0 +1,4 @@
+-- 2015-03-04 Sener Wu Initial (Compass DB)
+
+--select clmpayeetype,* from nova.TPOLADDH_TEMPLATE where FORM_SYSTEM_ID = '20259'
+update nova.TPOLADDH_TEMPLATE set clmpayeetype = 'I' where FORM_SYSTEM_ID = '20259'

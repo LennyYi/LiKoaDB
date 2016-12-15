@@ -1,0 +1,4 @@
+
+UPDATE TNovaCompanyMapping SET TEAMCD=61 WHERE COMPCODE=12
+
+delete tnovafieldmapping where form_system_id = '20261' and to_field ='POLICYTYPE'

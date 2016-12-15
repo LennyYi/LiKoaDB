@@ -1,0 +1,3 @@
+--2015-05-19 lenny yi for task NOVA-256
+
+insert into teflow_param_config(param_code,param_name,param_value,description,order_id) values('formatter_flag','formatter_flag','Y','for reformattering table',0);

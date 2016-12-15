@@ -1,0 +1,8 @@
+--20150304 Sener Wu intial
+
+--update the value of event_onfocus, no need "loadpic(this);" any more for when textbox onfocus then error tips keep shown.
+update teflow_form_section_field set event_onfocus='domainidrequest();' where form_system_id in (select form_system_id from teflow_form where form_id in ('GCPA_Form','NBForm','FlexSZ_NBForm','JS_NBForm')) and field_id='field_02_6'
+
+--20150305 Justin Bin Added
+-- remove the attribute of mandatory for the commission rate field 
+update teflow_form_section_field set is_required='-1' where field_id='field_6_6'

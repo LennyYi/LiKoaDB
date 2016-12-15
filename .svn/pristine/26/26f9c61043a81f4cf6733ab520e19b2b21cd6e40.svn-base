@@ -1,0 +1,7 @@
+--20150312 SamYu intial for GCPA
+
+update TNovaFieldMapping set from_field = 'field_9_20' where form_system_id = '20267' and to_table in ('TMEMPTPOL','TBILLDETAIL_NOVA') and to_field = 'PRODCODE'
+
+update TNovaFieldMapping set from_field = 'field_9_21' where form_system_id = '20267' and to_table in ('TMEMPTPOL','TBILLDETAIL_NOVA') and to_field = 'BENPLNCD'
+
+update TNovaFieldMapping set Mul_Field = 'Teflow_20267_11.id' where form_system_id = '20267' and to_table ='TCLNTSUB' and to_field = 'TAXID'

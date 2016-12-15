@@ -1,0 +1,60 @@
+/***********************************************************************************************************************/
+/* VER.		PIR.	  Ctrl No.	  Chg Date   	Modified By  	Description                                    */
+/* -------	------ 	  --------	  ---------- 	------------ 	-----------------------------------------------*/
+/* V1.0    						  02/06/2015   	Hinson Liang     	Add a warning message if user inputs same owner name*/
+/***********************************************************************************************************************/
+
+SET NOCOUNT ON 
+
+DECLARE @ScriptName	VARCHAR(510),
+	    @Revision	VARCHAR(20)
+
+SET	@ScriptName	= 'ScriptNova_SetupAUSDProcessFlow'
+SET	@Revision	= '1.0'
+DECLARE @PARMDESC	VARCHAR(12),
+	    @PARMVALUE	VARCHAR(20),
+	    @PARMTYPE	VARCHAR(8),
+	    @VALUEUSAGE	VARCHAR(100)
+
+IF NOT EXISTS (SELECT 1 FROM TCONVCTRLTBL WHERE ScriptName = @ScriptName AND Revision = @Revision)
+BEGIN
+
+	IF NOT EXISTS(SELECT * FROM T_Nova_CompassProcess WHERE form_system_id = 6)
+	BEGIN	
+		INSERT T_Nova_CompassProcess VALUES(6,3,'USPGNOVAAnalyseXML','')
+		INSERT T_Nova_CompassProcess VALUES(6,4,'UspGNOVASbmSD','')
+		INSERT T_Nova_CompassProcess VALUES(6,5,'UspGNOVAPaySD','')
+	END
+	
+	IF NOT EXISTS(SELECT 1 FROM TSYSPARMH WHERE PARMDESC = 'NOVADB')
+	BEGIN
+		INSERT TSYSPARMH 
+		VALUES('NOVADB','DB_NOVA_AU','NOVA','NOVA DB name',SUSER_SNAME(),GETDATE())
+	END
+	
+	IF NOT EXISTS(SELECT * FROM NOVA.TNOVA_SDRequest_template WHERE FORM_SYSTEM_ID = 6)
+	BEGIN
+		INSERT NOVA.TNOVA_SDRequest_template
+		VALUES('6',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+	END
+
+	IF NOT EXISTS(SELECT * FROM NOVA.TNOVA_SDHdrMap_template WHERE FORM_SYSTEM_ID = 6)
+	BEGIN
+		INSERT NOVA.TNOVA_SDHdrMap_template
+		VALUES('6',NULL,NULL,NULL,NULL,NULL,NULL)
+	END
+
+	--IF NOT EXISTS(SELECT * FROM TSYSPARMH WHERE PARMDESC = 'NOVASP' AND PARMTYPE = '6')
+	--BEGIN
+	--	INSERT TSYSPARMH
+	--	VALUES('NOVASP','1','6','UspGNOVASbmSD',SUSER_SNAME(),GETDATE())
+	--END
+
+	/*Version Control*/
+	INSERT INTO TCONVCTRLTBL (ScriptName, Revision, RCDUSRID, RCDDTSTMP)
+	VALUES (@ScriptName, @Revision, SUSER_SNAME(), GETDATE())
+   
+END
+
+SET NOCOUNT OFF
+

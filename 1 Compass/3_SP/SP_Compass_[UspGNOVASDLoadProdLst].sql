@@ -1,0 +1,51 @@
+IF EXISTS (SELECT * FROM SYSOBJECTS WHERE ID = object_id('dbo.UspGNOVASDLoadProdLst') and sysstat & 0xf = 4)
+	DROP PROCEDURE dbo.UspGNOVASDLoadProdLst
+GO
+
+CREATE PROCEDURE dbo.UspGNOVASDLoadProdLst
+( 	
+	@cPOLNO		char(10),
+	@cBILLPRDFR	CHAR(10)	--dd/MM/yyyy
+)
+AS
+/*******************************************************************
+	AIA CONFIDENTIAL MARCH 2000
+
+	COMPASS 2000 USER STORED PROCEDURE
+
+	STORED PROCEDURE USED FOR Load product list
+	
+	AUTHOR		:	Hinson Liang
+	DATE		:	01/15/2015
+	
+REVISION LOG:
+PDCF		PROGRAMMER	DATE		CTRL No.	PURPOSE
+------------------------------------------------------------------------------------------
+			Hinson.L	01/15/2015				Initial
+*********************************************************************/
+
+SET NOCOUNT ON
+
+DECLARE @dtBILLPRDFR DATETIME
+SELECT @dtBILLPRDFR = RIGHT(@cBILLPRDFR,4) + SUBSTRING(@cBILLPRDFR,4,2) + LEFT(@cBILLPRDFR,2)
+--SELECT @dtBILLPRDFR = @cBILLPRDFR
+
+SELECT A.PRODCODE
+,CASE STATUS WHEN 'A' THEN 'Active' WHEN 'S' THEN 'Suspended' ELSE 'Terminated' END AS 'Status'
+,B.PRODSHORT
+,CASE STATUS WHEN 'T' THEN CHGEFFDT ELSE NULL END AS 'TermDate'
+FROM TPOLPDT A, TPRODUCT B
+WHERE A.POLNO = @cPOLNO
+AND A.EFFDATE = (SELECT MAX(A1.EFFDATE) FROM TPOLPDT A1
+			WHERE A1.POLNO = A.POLNO
+			AND A1.PRODCODE = A.PRODCODE
+			AND A1.CHGEFFDT <= @dtBILLPRDFR
+			AND A1.RCDSTS = 'A'
+			)
+AND A.RCDSTS = 'A'
+AND B.PRODCODE = A.PRODCODE
+AND B.RCDSTS = 'A'
+
+RETURN
+
+

@@ -1,0 +1,190 @@
+IF EXISTS (SELECT 1 FROM SYSOBJECTS WHERE ID = OBJECT_ID('dbo.NovaUspBJXTAConvert') AND sysstat & 0xf = 4)
+	drop procedure dbo.NovaUspBJXTAConvert
+GO
+
+/****** Object:  StoredProcedure [dbo].[NovaUspBJXTAConvert]    Script Date: 2015/5/7 16:24:13 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+Create PROCEDURE [dbo].[NovaUspBJXTAConvert]
+(	@cTRANDATE		CHAR(10), 
+	@form_system_id		VARCHAR(10),
+	@request_no		VARCHAR(30),
+	@staff_code		VARCHAR(10),
+	@cRETCODE	CHAR(4) OUTPUT,
+	@cRETMESSAGE    VARCHAR(MAX) OUTPUT
+) AS
+/*******************************************************************
+	COMPASS 2000 USER STORED PROCEDURE
+
+	NovaUspFLAKConvert.SQL - Prepare xml for transfer data
+        
+        PROCESSING DETAILS:
+        Prepare XML file for 
+			
+	AUTHOR      :     Colin Wang
+	DATE	    :     05/07/2015
+	PIRNO	    :	  
+
+	REVISION LOG:
+	VERSION	  PIRNO		PROGRAMMER	REMARK		DATE		PURPOSE
+        1.0	  NOVA		Colin Wang				05/07/2015	Initial Version
+********************************************************************/
+/*error handling variable section */
+BEGIN
+
+begin try
+	DELETE FROM teflow_product WHERE request_no=@request_no 
+	DELETE FROM teflow_productplan WHERE request_no=@request_no 
+	
+	 	
+	DECLARE @field8 varchar(15) 	
+	DECLARE @field9 varchar(15) 	
+	DECLARE @field10 varchar(15) 
+	DECLARE @field11 varchar(15) 	
+	DECLARE @field12 varchar(15) 	
+	DECLARE @field13 varchar(15) 	
+	DECLARE @field14 varchar(15) 
+	DECLARE @field15 varchar(15) 	
+	DECLARE @field16 varchar(15) 	
+	DECLARE @field17 varchar(15) 	
+	DECLARE @field18 varchar(15) 
+	DECLARE @field19 varchar(15) 	
+	DECLARE @field20 varchar(15) 
+	DECLARE @field21 varchar(15)
+	DECLARE @productId char(5) 
+	DECLARE @planId char(3)
+	DECLARE @i int
+	
+	declare cur_planid cursor for 
+	select product_id,plan_id from teflow_30320_4 where request_no = @request_no
+	SELECT @i = 1
+	
+	open cur_planid	
+	FETCH NEXT FROM cur_planid INTO @productId, @planId
+	WHILE (@@FETCH_STATUS = 0)
+	BEGIN
+		select @field8 = replace(field_4_8,',',''),
+			   @field9 = replace(field_4_9,'%',''),
+			   @field10 = replace(field_4_10,',',''),
+			   @field11 = replace(field_4_11,'%',''),
+			   @field12 = replace(field_4_12,',',''),
+			   @field13 = replace(field_4_13,'%',''),
+			   @field14 = replace(field_4_14,',',''),
+			   @field15 = replace(field_4_15,'%',''),
+			   @field16 = replace(field_4_16,',',''),
+			   @field17 = replace(field_4_17,'%',''),
+			   @field18 = replace(field_4_18,',',''),
+			   @field19 = replace(field_4_19,'%',''),
+			   @field20 = replace(field_4_20,',',''),
+			   @field21 = replace(field_4_21,'%','')
+		from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+
+		if( @field8 is not null and @field8<>'' and @field9 is not null and @field9<>'')--友邦团体定期寿险 - GTL(保额)  201C1
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'201C1',field_4_2,field_4_3,@i,@request_no,@field9,@field8  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		
+		if( @field10 is not null and @field10<>'' and @field11 is not null and @field11<>'')--友邦团体意外伤害保险2014 - ADD2014(保额)  211D1
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'211D1',field_4_2,field_4_3,@i,@request_no,@field11,@field10  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		
+		if( @field12 is not null and @field12<>'' and @field13 is not null and @field13<>'')--友邦公共交通团体意外伤害保险2014 - PCA2014(保额)211D2
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'211D2',field_4_2,field_4_3,@i,@request_no,@field13,@field12  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end 
+		
+		if( @field14 is not null and @field14<>'' and @field15 is not null and @field15<>'')--友邦团体附加25种重大疾病保险-CI25(保额) 214S1
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'214S1',field_4_2,field_4_3,@i,@request_no,@field15,@field14  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		
+		if( @field16 is not null and @field16<>'' and @field17 is not null and @field17<>'')--友邦附加意外医药补偿A3款团体医疗保险 -AMR(保额)  211S5
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'211S5',field_4_2,field_4_3,@i,@request_no,@field17,@field16  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		if( @field18 is not null and @field18<>'' and @field19 is not null and @field19<>'')--友邦附加意外住院给付B款团体医疗保险 -AHI(保额) 311S1
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'311S1',field_4_2,field_4_3,@i,@request_no,@field19,@field18  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		
+		if( @field20 is not null and @field20<>'' and @field21 is not null and @field21<>'')--友邦附加每日住院给付团体医疗保险-HI(保额)311S3
+		begin
+			insert into teflow_productplan(PKGPRDCD,OCCUPCLASS,PLANCODE,PRODCODE,PLANDESC,NUMMEM,ID,request_no,premmodal,benamtmb)
+			select Product_id,field_4_22,Plan_id,'311S3',field_4_2,field_4_3,@i,@request_no,@field21,@field20  from teflow_30320_4 where request_no = @request_no and product_id = @productId and plan_id = @planId
+			SELECT @i = @i+1
+		end
+		
+		
+		FETCH NEXT FROM cur_planid INTO @productId, @planId
+	END
+
+	CLOSE cur_planid 
+	DEALLOCATE cur_planid
+
+	
+	declare cur_product cursor for 
+	select distinct PRODCODE from teflow_productplan where request_no = @request_no
+	SELECT @i = 1
+	
+	open cur_product	
+	FETCH NEXT FROM cur_product INTO @productId
+	WHILE (@@FETCH_STATUS = 0)
+	BEGIN
+		insert into TEFLOW_PRODUCT (PKGPRDCD,PRODCODE,ID,request_no)
+		values ('BJXTA',@productId,@i,@request_no)
+		
+		SELECT @i = @i+1
+		FETCH NEXT FROM cur_product INTO @productId
+	END
+	CLOSE cur_product 
+	DEALLOCATE cur_product
+	
+end try
+begin catch
+	if exists( select * from master.dbo.syscursors where cursor_name='cur_planid')
+	BEGIN
+		CLOSE cur_planid 
+		DEALLOCATE cur_planid  
+	END
+	if exists( select * from master.dbo.syscursors where cursor_name='cur_product')
+	BEGIN
+		CLOSE cur_product 
+		DEALLOCATE cur_product  
+	END
+	
+	DECLARE @ErrorMessage NVARCHAR(4000);  
+	DECLARE @ErrorSeverity INT;  
+	DECLARE @ErrorState INT;  
+	
+	SELECT @cRETCODE = '9999'
+
+	SELECT @ErrorMessage = ERROR_MESSAGE(),  
+	@ErrorSeverity = ERROR_SEVERITY(),  
+	@ErrorState = ERROR_STATE(); 
+	
+	INSERT INTO TNovaErrlogTran
+	select @request_no,'NovaUspBJXTAConvert',@ErrorMessage,@staff_code,GETDATE()
+
+	GOTO EXIT_WINDOW
+
+end catch
+
+EXIT_WINDOW:
+
+END

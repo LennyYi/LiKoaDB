@@ -1,0 +1,28 @@
+
+--DELETE TNovaSDFieldLst
+
+IF NOT EXISTS(SELECT * FROM TNovaSDFieldLst)
+BEGIN
+INSERT INTO TNovaSDFieldLst
+(NEWMEMDEF,FieldName,FieldDesc,SelProdInd,OptionalInd,SortOrder)
+VALUES
+(1,'STATE','State','N','N',5)
+,(1,'IdentifyID','Identify ID','N','N',10)
+,(1,'DOB','Birthday','N','Y',15)
+,(1,'INIEFFDT','Join Day','N','Y',20)
+,(1,'CHGSTATUS','Status(New Member/Terminated)','N','N',25)
+,(1,'BenefitAmount','Benefit Amount','Y','Y',30)
+,(1,'PaidPrem','Paid Premium','Y','N',35)
+
+
+INSERT INTO TNovaSDFieldLst
+(NEWMEMDEF,FieldName,FieldDesc,SelProdInd,OptionalInd,SortOrder)
+VALUES
+(2,'STATE','State','N','N',5)
+,(2,'IdentifyID','Identify ID','N','N',10)
+,(2,'DOB','Birthday','N','Y',15)
+,(2,'INIEFFDT','Join Day','N','N',20)
+,(2,'CHGSTATUS','Status(New Member/Terminated)','N','Y',25)
+,(2,'BenefitAmount','Benefit Amount','Y','Y',30)
+,(2,'PaidPrem','Paid Premium','Y','N',35)
+END

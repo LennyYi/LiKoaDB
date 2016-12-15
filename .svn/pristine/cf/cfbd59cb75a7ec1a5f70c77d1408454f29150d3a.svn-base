@@ -1,0 +1,15 @@
+--2015-03-04 Sting Wu
+begin tran
+
+delete from teflow_param_config where param_code = 'MemberUpload_path'
+
+INSERT teflow_param_config(param_code,param_name,param_value,description,order_id)  
+VALUES(N'MemberUpload_path',N'Member upload template path GD(Package)',N'/download/template/MemberUpload_20264.xlsx',N'20264',N'0')
+INSERT teflow_param_config(param_code,param_name,param_value,description,order_id)  
+VALUES(N'MemberUpload_path',N'Member upload template path JS',N'/download/template/MemberUpload_20261.xlsx',N'20261',N'0')
+INSERT teflow_param_config(param_code,param_name,param_value,description,order_id)  
+VALUES(N'MemberUpload_path',N'Member upload template path GD(GCPA)',N'/download/template/MemberUpload_20267.xlsx',N'20267',N'0')
+INSERT teflow_param_config(param_code,param_name,param_value,description,order_id)  
+VALUES(N'MemberUpload_path',N'Member upload template path SZ',N'/download/template/MemberUpload_20259.xlsx',N'20259',N'0')
+
+commit

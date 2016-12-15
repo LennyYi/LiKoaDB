@@ -1,0 +1,5 @@
+--Sting Wu 2015-03-10
+
+delete from teflow_param_config where param_name = 'dateFormat' or param_code = 'dateFormat'
+
+INSERT teflow_param_config(param_code,param_name,param_value,[description],order_id)  VALUES(N'dateFormat',N'dateFormat',N'yyyy/MM/dd',N'',N'0')

@@ -1,0 +1,11 @@
+--20150312 SamYu intial for GCPA
+
+select * into #TNovaProcess from TNovaProcess where form_system_id = '0'
+insert into #TNovaProcess(form_system_id,current_node_Id,process_sp,error_code,ORDERBY) values('20267','26','NovaUspGCPAConvert','E006','0') 
+update #TNovaProcess set form_system_id = '20267'
+
+--select * from #TNovaProcess order by ORDERBY asc
+delete from TNovaProcess where form_system_id = '20267' 
+insert into TNovaProcess select * from #TNovaProcess
+drop table #TNovaProcess
+select * from TNovaProcess where form_system_id = '20267' order by ORDERBY asc

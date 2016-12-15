@@ -1,0 +1,80 @@
+IF EXISTS (SELECT 1 FROM SYSOBJECTS WHERE ID = OBJECT_ID('DBO.USPGNOVAGetClientByPolicyNo') AND SYSSTAT & 0xF = 4)
+	DROP PROCEDURE DBO.USPGNOVAGetClientByPolicyNo
+GO
+/*******************************************************************
+	COMPASS 2000 USER STORED PROCEDURE
+
+	SP_Compass_[UspGNOVAGetClientByPolicyNo].sql - to get client code and client Name by Policy No
+        
+    PROCESSING DETAILS:			
+	AUTHOR      :     Justin Bin
+	DATE	    :     04/01/2015
+	PIRNO	    :	  
+
+	REVISION LOG:
+	VERSION	  PIRNO		PROGRAMMER	REMARK		DATE		PURPOSE
+	1.0					Justin Bin				04/01/2015	Init
+********************************************************************/
+
+create proc dbo.USPGNOVAGetClientByPolicyNo
+(
+     @cPolicyNo char(10)
+)
+as
+
+BEGIN
+
+declare @clientCode varchar(10)
+
+
+select POLDESC = NOVA.funReplaceSpecN(isnull(p.poldesc,''),0),
+	CLNTNAME = NOVA.funReplaceSpecN(isnull(a.clntname,''),0),
+	[STATUS] = p.[status],
+	CLNTCODE = p.clntcode,
+	BILLPRDTO = b.billprdto, 
+	NOTES = '['+NOVA.funReplaceSpecN(n.NOTE,0)+ ']', 
+	PRODCODES = substring((select distinct ',' + PRODCODE from TPOLPDT where [status]='A' 
+																	and rcdsts='A' 
+																	and PRODCODE in (select distinct PRODCODE from tproduct where PRODTYPE in ('A','P')) 
+																	and polno= @cPolicyNo 
+																for xml path('')),2,500),
+	FREEPRODCODES = '[{}' +(select distinct ',{' ,'"PRDUCODE":"'+a.PRODCODE,'","PRDUDESC":"'+ NOVA.funReplaceSpecN(prod.PRODCDESC,0) ,'"}'
+													from TPOLPDT a 
+													INNER JOIN tproduct prod on a.prodcode=prod.prodcode 
+																	and a.polno=@cPolicyNo
+																	and prod.RCDSTS='A' 
+																	and a.[STATUS]='A' 													
+																	and a.rcdsts='A'
+																	and	not exists (select 1 from tpolpdt b where a.polno=b.polno 
+																								and b.[STATUS]='A' and b.RCDSTS='A' and b.PRODCODE in 
+																										(select distinct c.PRODCODE  from tproduct c where c.PRODTYPE in ('A','P'))) 
+																for xml path(''))+']',
+	BUSNSRCE = c.busnsrce,
+	COMMCODE = c.commcode,
+	BRANCHCODE = d.BRANCHCODE,
+	COUNTYCODE = d.COUNTYCODE ,
+	SRVAE = d.SRVAE,
+	ProducerInfo ='[{ }'+ (select distinct ',{','"PRDUCODE":"'+pc.PRDUCODE,
+											 '","PRDUNAME":"'+NOVA.funReplaceSpecN(isnull(pr.PRDUNAME,''),0),
+											 '","AGTOFFCODE":"'+NOVA.funReplaceSpecN(isnull(pr.AGTOFFCODE,''),0),
+											 '","AGYCODE":"'+NOVA.funReplaceSpecN(isnull(pr.AGYCODE,''),0),
+											 '","TELNO":"'+NOVA.funReplaceSpecN(isnull(pr.TELNO,''),0),
+											 '","PRDUSHRPC":"'+NOVA.funReplaceSpecN(CONVERT(char(10), pc.PRDUSHRPC*100),0),'"}'
+							from TPOLPDTCOM pc 
+							left join TPRODUCER pr on pc.PRDUCODE=pr.PRDUCODE 
+								and pr.[STATUS]='A' 
+								and pr.RCDSTS='A'  
+							where pc.POLNO=@cPolicyNo and pc.RCDSTS='A'  for xml path('') ) +']'
+from tpolicy p 
+	inner join tclient a on a.CLNTCODE = P.CLNTCODE and p.polno=@cPolicyNo AND p.rcdsts='A'
+	left join tpolnote n on p.POLNO = n.POLNO and n.RCDSTS='A' 
+	left join tbildetp b on p.POLNO=b.POLNO and b.billno=(select max(billno) from tbildetp b1 where b1.polno=b.polno  
+															and b1.rcdsts='A' 
+															and b1.paidamt <>0 ) and b.rcdsts='A' 
+	left join (select top 1 polno, BUSNSRCE,COMMCODE from TPOLPDT 
+		where polno=@cPolicyNo and status='A' and rcdsts='A' and PRODCODE in (select distinct PRODCODE from tproduct where PRODTYPE in ('A','P'))) c on c.POLNO=p.polno
+	left join (select BRANCHCODE  ,COUNTYCODE,SRVAE,POLNO   from TPOLADDH where POLNO=@cPolicyNo) d on p.POLNO=d.POLNO
+group by p.poldesc,a.clntname,p.[status],p.clntcode,b.billprdto,n.NOTE,c.BUSNSRCE,c.COMMCODE, d.BRANCHCODE ,d.COUNTYCODE ,d.SRVAE
+
+
+END 

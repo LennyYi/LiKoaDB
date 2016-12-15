@@ -1,0 +1,24 @@
+#Fri Apr 03 15:04:32 CST 2015
+eclipse.preferences.version=1
+encoding//1\ Compass/1_Table/1.1\ Create/Create_Compass_[NOVA.heworksheet_template].sql=UTF-16
+encoding//1\ Compass/3_SP/SP_Compass_[USPGNOVAValidation].sql=UTF-16
+encoding//2\ Nova/3_SP/SP_Nova_[NovaUspCheckingMemDup].sql=UTF-16
+encoding//2\ Nova/5_Data/5.1\ Initial/Initial_Nova_[TNovaFieldMapping].sql=UTF-16
+encoding//2\ Nova/5_Data/5.1\ Initial/Initial_Nova_[TNovaProcess].sql=UTF-16
+encoding//2\ Nova/5_Data/5.1\ Initial/Initial_Nova_[teflow_form_section_field].sql=UTF-16
+encoding//2\ Nova/5_Data/5.1\ Initial/Initial_Nova_[teflow_param_config].sql=UTF-16
+encoding//2\ Nova/5_Data/5.2\ Update/Update_Nova_[TNovaFieldMapping].sql=UTF-16
+encoding//2\ Nova/5_Data/5.2\ Update/Update_Nova_[teflow_from_section_field].sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150317_NOVA_106.sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150317_NOVA_112.sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150319_NOVA_105.sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150327_NOVA_91_01.sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150327_NOVA_91_02.sql=UTF-16
+encoding//2\ Nova/5_Data/5.3\ Patch/Patch_Nova_20150403_NOVA_140.sql=UTF-16
+encoding//SP/CompassDB/USPGNOVAValidation.sql=UTF-16
+encoding//SP/NovaDB/NovaUspCheckingMemDup.sql=UTF-16
+encoding//Script/CompassDB/DDL/Script_Initial_Create_NOVA.heworksheet_template_Compass.sql=UTF-16
+encoding//Script/NovaDB/DML/CN/Patch/Script_Patch_PolNote_Append.sql=UTF-16
+encoding//Script/NovaDB/DML/CN/Script_Initial_Insert_TNovaFieldMapping_Nova.sql=UTF-16
+encoding//Script/NovaDB/DML/CN/Script_Initial_Insert_[teflow_from_section_field]_Nova.sql=UTF-16
+encoding/<project>=GB2312

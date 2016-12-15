@@ -1,0 +1,40 @@
+--BEGIN TRAN
+
+/***********************************************************************************************************************/
+/* VER.		PIR.	  Ctrl No.	  Chg Date   	Modified By  	Description                                    */
+/* -------	------ 	  --------	  ---------- 	------------ 	-----------------------------------------------*/
+/* V1.0    						  04/13/2015   	Hinson Liang    Add SD request job								*/
+/***********************************************************************************************************************/
+
+SET NOCOUNT ON 
+
+DECLARE @ScriptName	VARCHAR(510),
+	    @Revision	VARCHAR(20)
+
+SET	@ScriptName	= 'ScriptNova_SetupAUSDJob'
+SET	@Revision	= '1.0'
+DECLARE @PARMDESC	VARCHAR(12),
+	    @PARMVALUE	VARCHAR(20),
+	    @PARMTYPE	VARCHAR(8),
+	    @VALUEUSAGE	VARCHAR(100)
+
+IF NOT EXISTS (SELECT 1 FROM TCONVCTRLTBL WHERE ScriptName = @ScriptName AND Revision = @Revision)
+BEGIN
+
+	IF NOT EXISTS(SELECT 1 FROM TSYSDESC WHERE PGMNAME = 'GNOVAUplSD')
+	BEGIN
+		INSERT TSYSDESC
+		(PGMNAME,PLATCDE,PGMPATH,PGMDESC,GROUPID)
+		VALUES('GNOVAUplSD','P','GNOVAUplSD.bat','Upload AU Stamp Duty','1')
+	END
+
+
+	/*Version Control*/
+	INSERT INTO TCONVCTRLTBL (ScriptName, Revision, RCDUSRID, RCDDTSTMP)
+	VALUES (@ScriptName, @Revision, SUSER_SNAME(), GETDATE())
+   
+END
+
+SET NOCOUNT OFF
+
+--ROLLBACK TRAN

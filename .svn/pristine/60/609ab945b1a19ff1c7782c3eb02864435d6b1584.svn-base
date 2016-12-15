@@ -1,0 +1,26 @@
+IF NOT EXISTS(SELECT * FROM TNovaProcess WHERE form_system_id = 6)
+BEGIN
+	INSERT TNovaProcess VALUES(6,3,'NovaUspConvertXML','',0)
+	--INSERT TNovaProcess VALUES(6,2,'NovaUspClearError','',0)
+END
+
+IF NOT EXISTS(SELECT * FROM TNovaFieldMapping WHERE form_system_id = 6)
+BEGIN
+
+--DELETE TNovaFieldMapping WHERE form_system_id = 6
+
+INSERT TNovaFieldMapping VALUES('6','teflow_6_1','request_no','','TNOVA_SDRequest','NOVAREQNO','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_1','request_staff_code','','TNOVA_SDRequest','ReqBy','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_1','request_date','','TNOVA_SDRequest','SubmitDATE','DATETIME','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_2','field_2_1','','TNOVA_SDRequest','POLNO','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_2','RIGHT(field_2_3,4)+ LEFT(field_2_3,2) + SUBSTRING(field_2_3,4,2) ','','TNOVA_SDRequest','BILLPRDFR','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_2','field_2_5','','TNOVA_SDRequest','GROWTHDEF','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_2','CONVERT(CHAR(10),field_2_6,112)','','TNOVA_SDRequest','ASSIGNDATE','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_3','file_name','','TNOVA_SDRequest','FILEPATH','','',1)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_4','request_no','id','TNOVA_SDHdrMap','NOVAREQNO','','',5)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_4','field_4_2','id','TNOVA_SDHdrMap','NOVAHDRNAME','','',5)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_4','field_4_4','id','TNOVA_SDHdrMap','FIELDNAME','','',5)
+INSERT TNovaFieldMapping VALUES('6','teflow_6_4','field_4_5','id','TNOVA_SDHdrMap','PRODCODE','','',5)
+
+
+END

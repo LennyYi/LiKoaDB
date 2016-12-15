@@ -1,0 +1,11 @@
+--20150225 Sting Wu intial
+
+delete from TNovaProcess where form_system_id = 20259
+
+insert into TNovaProcess
+select * from (
+select 20259 as form_system_id,25 as current_node_Id,'NovaUspClearError' as process_sp,'E005' as error_code,NULL as ORDERBY
+union all
+select 20259 as form_system_id,26 as current_node_Id,'NovaUspFLAKConvert' as process_sp,'E006' as error_code,0 as ORDERBY
+union all
+select 20259 as form_system_id,26 as current_node_Id,'NovaUspConvertXML' as process_sp,'E001' as error_code,1 as ORDERBY) T

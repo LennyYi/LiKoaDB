@@ -1,0 +1,185 @@
+if exists (select 1 from dbo.sysobjects where id = object_id(N'[dbo].[search_details_member]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+     drop procedure [dbo].[search_details_member]
+GO
+
+/*********************** REVISION LOG: ***********************************
+Version			Date			Revised by				Remark
+1.0				20150304		Colin					initial
+**************************************************************************/
+
+CREATE PROCEDURE [dbo].[search_details_member]
+(@sectionId varchar(20),
+@policyNo varchar(50),
+@certNo varchar(50),
+@clientCode varchar(50),
+@deptCode varchar(50))
+AS
+BEGIN
+SET NOCOUNT ON
+	if(@sectionId = 'mpoli_base')
+	begin
+		SELECT TOP 1
+        POLNO = t1.POLNO,
+        POLDesc = t1.POLDESC,
+        PolStatus = (CASE WHEN t1.[STATUS] = 'S' THEN 'Suspended' 
+	                     WHEN t1.[STATUS] = 'T' THEN 'Terminated' 
+	                     ELSE 'Active' END),
+        Mode = (CASE WHEN t5.ADJBILLMODE  = 'A' THEN  'A - Annually'
+                     WHEN t5.ADJBILLMODE  = 'M' THEN 'M - Monthly'
+                     WHEN t5.ADJBILLMODE  = 'Q' THEN 'Q - Quarterly'
+                     WHEN t5.ADJBILLMODE  = 'S' THEN 'S - Semi-Ann'
+                ELSE '' END),
+        COMPCODE = t1.COMPCODE,
+        COMPNAME = t2.COMPNAME,
+        CLNTCODE = t1.CLNTCODE,
+        CLNTNAME = t3.CLNTNAME,
+        BatchbillingDay = t5.batchbillday,
+        BatchAdjBillDay = isnull(t5.ADJBILLDAY,'00'),
+        TeamCode = t5.teamcd,
+        UWTeamCode = t5.uwteamcd,
+        BranchCode = t5.BranchCode,
+        BillerOfficer = t5.BATCHBILLERID,
+        SecLevelCity = t8.COUNTYCODE + '  ' + T8.COUNTYDESC
+        from TPOLICY t1
+        INNER JOIN TCOMPANY t2 on t1.COMPCODE = T2.COMPCODE 
+            AND t1.POLNO = @policyNo
+            AND t1.RCDSTS = 'A' 
+            AND t2.RCDSTS = 'A'
+        INNER JOIN tclient t3 on t1.CLNTCODE = t3.CLNTCODE
+        INNER JOIN TPOLYEAR t4 on t1.POLNO = t4.POLNO
+            AND	t4.POLDTFR 	<=	GETDATE()
+            AND t4.POLDTTO	>=	GETDATE()
+        INNER JOIN TPOLADDH t5 ON T1.POLNO = T5.POLNO
+        LEFT JOIN TCOMPBRNCOUNTY T8 ON T8.COUNTYCODE = T5.COUNTYCODE 
+	end
+	
+	if(@sectionId = 'memb_base')
+	begin
+		SELECT 
+        CertNo = @certNo,
+        DEPTYPE = CASE T1.DEPTYPE WHEN 'M' THEN 'MEMBER' 
+	                WHEN 'S' THEN 'SPOUSE'
+	                WHEN 'C' THEN 'CHILD'
+	                WHEN 'P' THEN 'PARENT'
+	                ELSE '' END,
+        MemberID = T3.MEMBERID,
+        MemStatus = CASE T1.[STATUS] WHEN 'R' THEN 'Retired' 
+	                    WHEN 'S' THEN 'Suspended'
+	                    WHEN 'A' THEN 'Active'
+                    ELSE '' END,
+        Title = T1.Occupation,
+        LastName = T1.NAMELAST,
+        FirstName = T1.NAMEFIRST,
+        MidName = T1.NAMEMID,
+        Nationality = RTRIM(T4.Cntycode) + '' + T4.CNTYNAME,
+        InitialEffDate = T1.Inieffdt,
+
+        ChgEffDate = T1.Effdate,
+        TransDate = T1.Chgeffdt,
+        Employed = CASE WHEN RTRIM(T1.Employed) = 'Y' THEN 1 ELSE 0 END,
+        SubOfficeCode = T1.SUBOFFCODE,
+        SubOfficeName = T5.SUBOFFNAME,
+
+        DepartmentCode = T1.DEPARTCD,
+        DepartmentName = T6.DeptName,
+        IdentificationType = T1.IdentType,
+        IdentityNo = T1.Memidno,
+        OccupationCode = T1.OccupCode
+		,
+        OccupationClass = RTRIM(T1.OccupClass),
+        
+		DateOfBirth = T1.Dob,
+        EmploymentDate = T1.Empdt,
+        MartialStatus = CASE T1.MARITAL 
+                    WHEN 'S' THEN 'Single' 
+                    WHEN 'M' THEN 'Married'
+                    WHEN 'D' THEN 'Divorced'
+                    ELSE 'Unknown' END,
+        Salary = T1.Salary,
+        CSRefNo = RTRIM(T1.CLNTCODE) + RTRIM(T1.CERTNO) + '01',
+
+        SpecialStatus = CASE WHEN T1.SPECIALSTATUS IS NOT NULL 
+	                    THEN rtrim(T7.PARMSHORT)+ rtrim(T7.PARMDESC) ELSE '' END,
+        IssueDate = T1.IDIssDate,
+        IssuePlace = T1.IDIssPlace,
+        Sex = CASE WHEN T1.Sex = 'F' THEN 'Female' ELSE 'Male' END
+        from ( 
+         SELECT 'M' as DEPTYPE,CERTNO,CLNTCODE,1 AS DEPCODE,SUBOFFCODE,[STATUS],Occupation,Memnation, 
+         NAMELAST,NAMEFIRST,NAMEMID,Inieffdt,Effdate,Chgeffdt,Employed,DEPARTCD,IdentType,
+         Memidno,OccupCode,OccupClass,Dob,Empdt,MARITAL,Salary,SPECIALSTATUS,IDIssDate,IDIssPlace,Sex,
+         RANK() OVER (PARTITION BY CLNTCODE, CERTNO ORDER BY EFFDATE DESC, CHGEFFDT DESC ) ROWNO2 
+         FROM TMEMBER
+         WHERE CLNTCODE = @clientCode AND CERTNO = @certNo AND 
+		 RCDSTS = 'A' AND CHGEFFDT < GETDATE()
+         UNION ALL
+         (
+         SELECT T1.DEPTYPE,T1.CERTNO,T1.CLNTCODE,T1.DEPCODE,T2.SUBOFFCODE,T1.[STATUS],T2.Occupation,T2.Memnation, 
+         T1.NAMELAST,T1.NAMEFIRST,T1.NAMEMID,T1.Inieffdt,T1.Effdate,T1.Chgeffdt,T2.Employed,T2.DEPARTCD,T1.IdentType,
+         T1.DEPIDNO AS Memidno,T2.OccupCode,T1.OccupClass,T1.Dob,T2.Empdt,T2.MARITAL,T2.Salary,T1.SPECIALSTATUS,
+         T2.IDIssDate,T2.IDIssPlace,T1.Sex,
+         RANK() OVER (PARTITION BY T1.CLNTCODE, T1.CERTNO, T1.DEPCODE ORDER BY T1.EFFDATE DESC, T1.CHGEFFDT DESC ) ROWNO2 
+         FROM TDEPENDENT T1 
+         INNER JOIN  (SELECT CERTNO,CLNTCODE,SUBOFFCODE,[STATUS],Occupation,Memnation, 
+             NAMELAST,NAMEFIRST,NAMEMID,Inieffdt,Effdate,Chgeffdt,Employed,DEPARTCD,IdentType,
+             Memidno,OccupCode,OccupClass,Dob,Empdt,MARITAL,Salary,SPECIALSTATUS,IDIssDate,IDIssPlace,RANK() OVER (PARTITION BY CLNTCODE, CERTNO ORDER BY EFFDATE DESC, CHGEFFDT DESC ) ROWNO2 
+             FROM TMEMBER
+             WHERE CLNTCODE = @clientCode AND CERTNO = @certNo AND 
+			 RCDSTS = 'A' AND CHGEFFDT < GETDATE()) T2 
+         ON  T1.CERTNO = T2.CERTNO AND T1.CLNTCODE = T2.CLNTCODE  
+            AND T1.RCDSTS = 'A' AND T1.CHGEFFDT < GETDATE() AND T2.ROWNO2 = 1
+         )
+        )  T1 
+        LEFT JOIN TUHCFAMILYID T2 ON T1.CLNTCODE = T2.CLNTCODE AND T2.CERTNO = T1.CERTNO AND T1.ROWNO2 = 1
+        LEFT JOIN TUHCMEMBERID T3 ON T2.FAMILYID = T3.FAMILYID AND T3.DEPCODE = 1
+        LEFT JOIN TCOUNTRY T4 ON T1.Memnation = T4.Cntycode AND T4.RCDSTS = 'A' 
+        LEFT JOIN TCLNTSUB T5 ON T5.CLNTCODE = T1.CLNTCODE AND T5.SUBOFFCODE = T1.SUBOFFCODE
+        LEFT JOIN TDepartment T6 ON T6.DeptCode = T1.DEPARTCD AND T6.CLNTCODE = T1.CLNTCODE AND T6.SUBOFFCODE = T1.SUBOFFCODE
+        LEFT JOIN TADDINFO T7 ON T7.INFODESC	= 'Special Status' AND T7.PARMSHORT = T1.SPECIALSTATUS AND T7.RCDSTS = 'A'
+        WHERE T1.DEPCODE = @deptCode
+	end
+	
+	if(@sectionId = 'cove_list')
+	begin
+		SELECT POLNO = T.POLNO,
+        SubOfficeCode = T.SUBOFFCODE,
+        DepCode = T.DEPCODE,
+        Age = CASE WHEN T.DepCode <> 1 THEN DATEDIFF(YEAR,ISNULL(T2.DOB,GETDATE()),GETDATE()) 
+                ELSE DATEDIFF(YEAR,ISNULL(T1.DOB,GETDATE()),GETDATE())
+                END,
+        ProductCode = T.PRODCODE,
+        ProductShortName = T3.PRODSHORT,
+        PlanNo = T.BENPLNCD,
+        CoverageCode = T.COVGCODE,
+        [Status] = T.PRDSTATUS,
+        ChangeEffDate = T.CHGEFFDATE,
+        InforceSA = T.PROLFIA,
+        NELAmount = T.NELAMT,
+        TransDate = T.CHGEFFDT,
+        FlatLoadingRate = T.PRMLOADAMT,
+        UWLoading = T.PRMLOADPC,
+        ExtraMortality = T.MEDRATCODE,
+        BillNumber = T.BILLNO
+         FROM (
+        select T1.CLNTCODE, T1.CERTNO, T1.POLNO, T1.SUBOFFCODE,T1.DEPCODE,
+        T1.PRODCODE,T1.BENPLNCD,T1.COVGCODE,T1.PRDSTATUS,T1.CHGEFFDATE,
+        T1.PROLFIA,T1.NELAMT,T1.CHGEFFDT,T1.PRMLOADAMT,T1.PRMLOADPC,
+        T1.MEDRATCODE,T1.BILLNO,
+        RANK() OVER(PARTITION BY CLNTCODE, CERTNO, DEPCODE, POLNO, PRODCODE, BENPLNCD, COVGCODE, SUBOFFCODE
+         ORDER BY CHGEFFDATE ASC, CHGEFFDT ASC) ROWNUM
+        from TMEMPTPOL T1 
+        where   T1.CLNTCODE  = @clientCode
+        and     T1.CERTNO    = @certNo
+        and     T1.RCDSTS    = 'A'
+        AND		T1.CHGEFFDATE <= GETDATE()
+        ) T 
+        LEFT JOIN (SELECT CLNTCODE,CERTNO,DOB,RANK() OVER( PARTITION BY CLNTCODE, CERTNO ORDER BY CHGEFFDT DESC, EFFDATE DESC) ROWNUM
+            FROM TMEMBER WHERE CLNTCODE  = @clientCode AND CERTNO    = @certNo AND CHGEFFDT < GETDATE()) T1 
+            ON T1.ROWNUM = 1 AND T1.CERTNO = T.CERTNO AND T1.CLNTCODE = T.CLNTCODE AND T.DepCode = @deptCode
+        LEFT JOIN (SELECT CLNTCODE,CERTNO,DEPCODE,DOB,RANK() OVER( PARTITION BY CLNTCODE, CERTNO,DEPCODE ORDER BY CHGEFFDT DESC, EFFDATE DESC) ROWNUM
+            FROM TDEPENDENT WHERE CLNTCODE  = @clientCode AND CERTNO    = @certNo AND CHGEFFDT < GETDATE()) T2 
+            ON T2.ROWNUM = 1 AND T2.CERTNO = T.CERTNO AND T2.CLNTCODE = T.CLNTCODE AND T2.DepCode = T.DepCode
+        LEFT JOIN TPRODUCT T3 ON T.PRODCODE = T3.PRODCODE
+        WHERE T.ROWNUM = 1
+	end
+	
+END

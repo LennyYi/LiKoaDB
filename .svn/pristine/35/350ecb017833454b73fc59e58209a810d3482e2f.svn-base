@@ -1,0 +1,49 @@
+--Created by Sting Wu
+--Created at 2015-02-10
+--Created for initial table in Compass
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[T_Nova_CompassProcess]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+	DROP TABLE dbo.[T_Nova_CompassProcess]
+
+create table T_Nova_CompassProcess
+(
+	[form_system_id]	[int]	NOT NULL,
+	[current_node_Id]	[int]	NOT NULL,
+	[process_sp]		[varchar](100) NULL,
+	[error_code]		[char](4)	NULL
+) 
+
+go
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[T_Nova_ErrlogTran]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+	DROP TABLE dbo.[T_Nova_ErrlogTran]
+
+create table T_Nova_ErrlogTran (
+	RequestNo		varchar(30)		NULL,
+	ProgramID		varchar(60)		NULL,
+	ERRORLOG		nvarchar(3000)	NULL,
+	RCDUSRID		char(8)			NULL,
+	RCDDTSTMP		datetime		NULL
+)
+go
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[T_Nova_TXMLConvert]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+	DROP TABLE dbo.[T_Nova_TXMLConvert]
+
+CREATE TABLE [dbo].[T_Nova_TXMLConvert](
+	[NovaXML] [xml] NULL,
+	[request_no] [varchar](30) NULL
+) ON [PRIMARY]
+
+go
+
+IF EXISTS (SELECT 1 FROM dbo.sysobjects WHERE id = object_id(N'[dbo].[T_Nova_InsertCheck]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+	DROP TABLE dbo.[T_Nova_InsertCheck]
+
+CREATE TABLE [dbo].[T_Nova_InsertCheck](
+	[tableName] [varchar](200) NULL,
+	[insert_Script] [nvarchar](4000) NULL,
+	[request_no] [varchar](30) NULL
+) ON [PRIMARY]
+
+go

@@ -1,0 +1,41 @@
+if exists (select 1 from dbo.sysobjects where id = object_id(N'[dbo].[search_main]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+     drop procedure [dbo].[search_main]
+GO
+
+CREATE PROCEDURE [dbo].[search_main]
+(@searchType varchar(20),
+@searchKey varchar(100))
+AS
+BEGIN
+SET NOCOUNT ON
+	if(@searchType = 'policy')
+	begin
+		select POLNO,POLDESC =RTRIM(POLDESC),displaycolumn = POLNO+'('+RTRIM(POLDESC)+')' from TPOLICY where POLNO like '%'+@searchKey+'%' or POLDESC like '%'+@searchKey+'%'
+	end
+	
+	if(@searchType = 'client')
+	begin
+		select c.CLNTCODE,c.CLNTNAME,p.POLNO ,displaycolumn = c.CLNTCODE+'('+RTRIM(c.CLNTNAME)+')'
+		from TCLIENT c,TPOLICY p 
+		where p.CLNTCODE = c.CLNTCODE and c.CLNTCODE like '%'+@searchKey+'%' or c.CLNTNAME like '%'+@searchKey+'%'
+	end
+	
+	if(@searchType = 'member')
+	begin
+        SELECT DISTINCT  T1.CLNTCODE , T1.CERTNO, T3.POLNO,T2.CLNTNAME,T1.MEMIDNO,T1.DEPCODE,userName = RTRIM(ISNULL(T1.NAMEFIRST,N'')) + N' ' + RTRIM(ISNULL(T1.NAMEMID,N'')) + N' ' + RTRIM(ISNULL(T1.NAMELAST,N'')),displaycolumn = T1.MEMIDNO+'('+RTRIM(ISNULL(T1.NAMEFIRST,N'')) + N' ' + RTRIM(ISNULL(T1.NAMEMID,N'')) + N' ' + RTRIM(ISNULL(T1.NAMELAST,N''))+')'
+        FROM (SELECT CLNTCODE,CERTNO,'1' AS DEPCODE,MEMIDNO,NAMEFIRST,NAMEMID,NAMELAST,RANK() OVER (PARTITION BY CLNTCODE,CERTNO ORDER BY CHGEFFDT DESC,EFFDATE DESC) ROWNUM 
+        		FROM TMEMBER 
+				WHERE RCDSTS = 'A' AND CHGEFFDT < GETDATE()
+			 	UNION ALL 
+			 	SELECT CLNTCODE,CERTNO,CAST(DEPCODE AS VARCHAR) AS DEPCODE,DEPIDNO AS MEMIDNO,NAMEFIRST,NAMEMID,NAMELAST,RANK() OVER (PARTITION BY CLNTCODE,CERTNO ORDER BY CHGEFFDT DESC,EFFDATE DESC) ROWNUM 
+			 	FROM TDEPENDENT
+				WHERE RCDSTS = 'A' AND CHGEFFDT < GETDATE()
+			  ) T1
+        INNER JOIN  TCLIENT T2 
+        ON T1.CLNTCODE = T2.CLNTCODE AND ROWNUM = 1 
+		AND (T1.MEMIDNO LIKE N'%'+@searchKey+'%' OR LTRIM(RTRIM((RTRIM(T1.NAMEFIRST)) + ' '+ RTRIM(T1.NAMEMID) + ' '+ RTRIM(T1.NAMELAST))) LIKE N'%'+@searchKey+'%') 
+		inner join TPOLICY T3 on T3.CLNTCODE = T1.CLNTCODE and ROWNUM = 1
+	end
+
+
+END

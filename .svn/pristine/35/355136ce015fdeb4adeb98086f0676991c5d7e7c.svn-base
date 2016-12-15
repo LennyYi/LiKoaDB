@@ -1,0 +1,126 @@
+if exists (select 1 from dbo.sysobjects where id = object_id(N'[dbo].[search_details_policy]') and OBJECTPROPERTY(id, N'IsProcedure') = 1)
+     drop procedure [dbo].[search_details_policy]
+GO
+
+CREATE PROCEDURE [dbo].[search_details_policy]
+(@sectionId varchar(20),
+@policyNo varchar(50))
+AS
+BEGIN
+SET NOCOUNT ON
+	if(@sectionId = 'poli_base')
+	begin
+		select 
+        POLNO = t1.POLNO,
+        POLDesc = t1.POLDESC,
+        [STATUS] = (CASE WHEN t1.[STATUS] = 'S' THEN 'Suspended' 
+	                     WHEN t1.[STATUS] = 'T' THEN 'Terminated' 
+	                     ELSE 'Active' END),
+        COMPCODE = t1.COMPCODE,
+        COMPNAME = t2.COMPNAME,
+        CLNTCODE = t1.CLNTCODE,
+        CLNTNAME = t3.CLNTNAME,
+        IniEffDate = t1.IniEffDt,
+        NexAnnDate = (CASE
+	                    WHEN t4.ANNVDATE > t4.POLDTTO THEN t4.AnnvDate
+	                    ELSE  DATEADD(DD, 1, t4.POLDTTO)
+                     END),
+        AGYFORCE = (CASE t5.agyforce WHEN 'Y' THEN 1 ELSE 0 END),
+        AGYFORCECLAIM = (CASE t5.agyforceclaim WHEN 'Y' THEN 1 ELSE 0 END) ,
+        AUTORENW = (CASE t5.autorenw WHEN 'Y' THEN 1 ELSE 0 END) ,
+        SalesRep = t6.PRDUCODE + '  ' + t6.PRDUNAME,
+        SalesRep2 = t7.PRDUCODE + '  ' + t6.PRDUNAME,
+        ServicingAE = t5.srvae,
+        ServicingOfficer = t1.UserId,
+        ClaimsOfficer = t5.ClmsId,
+        ClaimLimit = (CASE t1.AnnLimitPeriodInd WHEN 'Y' THEN 1 ELSE 0 END),
+        ClaimServicingCompany = cast(t1.COMPCODE as nvarchar) + ' ' + t2.COMPSHORT,
+        BatchbillingDay = t5.batchbillday,
+        BatchAdjBillDay = isnull(t5.ADJBILLDAY,'00'),
+        WithMemberList = (CASE t5.MEMLSTIND WHEN 'Y' THEN 1 ELSE 0 END),
+        Mode = (CASE WHEN t5.ADJBILLMODE  = 'A' THEN  'A - Annually'
+                     WHEN t5.ADJBILLMODE  = 'M' THEN 'M - Monthly'
+                     WHEN t5.ADJBILLMODE  = 'Q' THEN 'Q - Quarterly'
+                     WHEN t5.ADJBILLMODE  = 'S' THEN 'S - Semi-Ann'
+                ELSE '' END),
+        BillerOfficer = t5.BATCHBILLERID,
+        TeamCode = t5.teamcd,
+        UWTeamCode = t5.uwteamcd,
+        BranchCode = t5.BranchCode,
+        SecLevelCity = t8.COUNTYCODE + '  ' + T8.COUNTYDESC
+        from TPOLICY t1
+        inner join TCOMPANY t2 on t1.COMPCODE = T2.COMPCODE 
+            and t1.POLNO = @policyNo
+            and t1.RCDSTS = 'A' 
+            and t2.RCDSTS = 'A'
+        inner join tclient t3 on t1.CLNTCODE = t3.CLNTCODE
+        inner join TPOLYEAR t4 on t1.POLNO = t4.POLNO
+            AND	t4.POLDTFR 	<=	GETDATE()
+            AND t4.POLDTTO	>=	GETDATE()
+        inner join TPOLADDH t5 ON T1.POLNO = T5.POLNO
+        left JOIN TCOMPBRNCOUNTY T8 ON T8.COUNTYCODE = T5.COUNTYCODE
+        left join TPRODUCER t6 on t1.PrduCode = t6.PrduCode
+        left join TPRODUCER t7 on t1.PrduCodeSR2 = t6.PrduCode   
+	end
+	
+	if(@sectionId = 'poli_prod')
+	begin
+		SELECT 
+			ProductCode = TSprd.ProdCode,
+            ProductName = TSprd.ProdShort,
+            Status = TPopd.Status,
+            ChangeEffDate = TPopd.ChgEffdt,
+            Currency = TPopd.CurcCode,
+            BillType = TPopd.BillType,
+            BillMode = TPopd.BillMode,
+            SumAssured = SUM( TPolf.NumMem )+ SUM( TPolf.NumDep ),
+            NoOfInsured = ISNULL(SUM( TPolf.BenAmt ),0),
+            InitialEffDate = TPopd.IniEffDt,
+            BillPlan = TPopd.BillPlanCd,
+            TOB = TPopd.BusnType,
+            Source = TPopd.BusnSrce,
+            Comm = TPopd.CommCode,
+            TransDate = TPopd.EffDate
+        FROM tproduct  TSprd  
+        INNER JOIN (SELECT *,RANK() OVER (PARTITION BY POLNO, PRODCODE ORDER BY EffDate DESC ) ROWNO FROM TPOLPDT TPopd 
+		WHERE TPopd.PolNo =  @policyNo AND	TPopd.RcdSts	= 	'A'   
+            AND TPopd.ChgEffDt	<=	getdate()) TPopd ON TSprd.ProdCode	= TPopd.ProdCode
+            AND TPopd.RcdSts	= TSprd.RcdSts  
+            AND TSprd.ProdType  IN ( 'L','M' )  
+            AND TPopd.ROWNO = 1 
+        INNER JOIN TPOLFINCL TPolf ON TPolf.PolNo = TPopd.POLNO
+            AND TPolf.ProdCode = TPopd.PRODCODE
+        INNER JOIN TPOLICY TPol ON tpolf.POLNO = tpol.POLNO 
+        INNER JOIN TCLNTSUB TCLS ON TCLS.CLNTCODE = TPol.CLNTCODE 
+            AND	TCLS.SUBOFFCODE = TPolf.SUBOFFCODE 
+            AND TCLS.STATUS = 'A'
+            AND	TPolf.AcDate = (select max(ACDATE) from TPOLFINCL TPolf2
+                    where TPolf2.polno = TPopd.POLNO
+                    and TPolf2.PRODCODE = TPopd.PRODCODE
+                    and TPolf2.SUBOFFCODE = TPolf.SUBOFFCODE
+                    and TPolf2.ACDATE <= convert(CHAR(6), getdate(), 112) )
+            AND TPolf.RcdSts = 'A'
+	     group by TSprd.ProdCode, TSprd.ProdShort, TSprd.ProdType, TPopd.CurcCode,
+	              TPopd.ChgEffdt, TPopd.Status, TPopd.IniEffDt, TPopd.BillPlanCd,
+	              TPopd.BillMode, TPopd.BillType, TPopd.BusnType, TPopd.BusnSrce,
+	              TPopd.CommCode, TPopd.EffDate
+	end
+	
+	if(@sectionId = 'poli_memb')
+	begin
+        SELECT  POLNO = @policyNo,CLNTCODE = '<a>'+T1.CLNTCODE+'</a>', MemberID = T5.MEMBERID, CERTNO = T1.CERTNO, DEPCODE = T1.DEPCODE, SEX = T2.SEX, DOB = T2.DOB, FirstName = T2.NAMEFIRST,  LastName = T2.NAMELAST, MidName = T2.NAMEMID
+        FROM (SELECT DISTINCT CLNTCODE, CERTNO, DEPCODE FROM TMEMPTPOL  T1 WHERE T1.POLNO = @policyNo  AND T1.CHGEFFDATE < GETDATE() AND T1.RCDSTS = 'A')  T1
+        INNER JOIN (  SELECT T2.CLNTCODE, T2.CERTNO, 1 AS DEPCODE, T2.SEX,T2.DOB,T2.NAMEFIRST,T2.NAMELAST,T2.NAMEMID, RANK() OVER (PARTITION BY T2.CLNTCODE, T2.CERTNO ORDER BY T2.EFFDATE DESC, T2.CHGEFFDT DESC ) ROWNO 
+                FROM (SELECT DISTINCT CLNTCODE, CERTNO, DEPCODE FROM TMEMPTPOL  T1   WHERE T1.POLNO = @policyNo AND T1.CHGEFFDATE < GETDATE() AND T1.RCDSTS = 'A') T1 
+                INNER JOIN TMEMBER T2 ON T1.CERTNO = T2.CERTNO AND T1.CLNTCODE = T2.CLNTCODE AND T2.EFFDATE < GETDATE() AND T2.RCDSTS = 'A'  AND T1.DEPCODE = 1
+                UNION ALL 
+                SELECT T3.CLNTCODE, T3.CERTNO, T3.DEPCODE, T3.SEX,T3.DOB,T3.NAMEFIRST,T3.NAMELAST,T3.NAMEMID, RANK() OVER (PARTITION BY T3.CLNTCODE, T3.CERTNO, T3.DEPCODE ORDER BY T3.EFFDATE DESC, T3.CHGEFFDT DESC ) ROWNO
+                FROM (SELECT DISTINCT CLNTCODE, CERTNO, DEPCODE FROM TMEMPTPOL  T1 WHERE T1.POLNO = @policyNo AND T1.CHGEFFDATE < GETDATE() AND T1.RCDSTS = 'A')  T1 
+                INNER JOIN TDEPENDENT T3 ON T1.CERTNO = T3.CERTNO AND T1.DEPCODE = T3.DEPCODE AND T1.CLNTCODE = T3.CLNTCODE AND T3.EFFDATE < GETDATE() AND T3.RCDSTS = 'A' AND T1.DEPCODE <> 1) T2 
+            ON T1.CERTNO = T2.CERTNO AND T1.CLNTCODE = T2.CLNTCODE AND T1.DEPCODE = T2.DEPCODE AND T2.ROWNO = 1 
+        LEFT JOIN TUHCFAMILYID T4 ON T1.CLNTCODE = T4.CLNTCODE AND T1.CERTNO = T4.CERTNO
+        LEFT JOIN TUHCMEMBERID T5 ON T4.FAMILYID = T5.FAMILYID AND T5.DEPCODE = T1.DEPCODE
+	end
+
+
+END

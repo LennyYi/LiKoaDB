@@ -1,0 +1,144 @@
+/*======================For Test============================*/
+/*----------------------------------------------------------*/
+create trigger tef_staff_utrig
+on tpma_staffbasic
+for update as
+	if update(status)
+	begin
+    	declare @delstatus char(1),@insertstatus char(1)
+	    
+	select @delstatus=deleted.status from deleted
+    	select @insertstatus=inserted.status from inserted
+            
+	if @delstatus='A' and @insertstatus='T'
+    	begin
+		update db_eflow_cn.teflow_deputy_manage
+	        set db_eflow_cn.teflow_deputy_manage.status = '02'
+	        from db_eflow_cn.teflow_deputy_manage,deleted
+        	where deleted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_approver
+	        or    deleted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_deputy
+    	end
+    	
+	end
+
+	if update(team_code)
+	begin
+		update db_eflow_cn.teflow_deputy_manage
+		set db_eflow_cn.teflow_deputy_manage.approver_team = inserted.team_code
+		from db_eflow_cn.teflow_deputy_manage,inserted
+		where db_eflow_cn.teflow_deputy_manage.authority_approver = inserted.staff_code
+		
+		update db_eflow_cn.teflow_deputy_manage
+		set db_eflow_cn.teflow_deputy_manage.deputy_team = inserted.team_code
+		from db_eflow_cn.teflow_deputy_manage,inserted
+		where db_eflow_cn.teflow_deputy_manage.authority_deputy = inserted.staff_code    	    
+	end
+		
+/*----------------------------------------------------------*/
+create trigger tef_staff_itrig
+on tpma_staffbasic
+for insert as
+	if (select count(*) from db_eflow_cn.teflow_deputy_manage a, inserted b
+	    where a.authority_approver=b.staff_code or a.authority_deputy=b.staff_code)>0
+	begin
+		update db_eflow_cn.teflow_deputy_manage
+	        set db_eflow_cn.teflow_deputy_manage.status = '01'
+	        from db_eflow_cn.teflow_deputy_manage,inserted
+        	where inserted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_approver
+	        or    inserted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_deputy
+	        
+	    update db_eflow_cn.teflow_deputy_manage
+	    	set db_eflow_cn.teflow_deputy_manage.approver_team = inserted.team_code
+	    	from db_eflow_cn.teflow_deputy_manage,inserted
+	    where inserted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_approver
+	    
+	    update db_eflow_cn.teflow_deputy_manage
+	    	set db_eflow_cn.teflow_deputy_manage.deputy_team = inserted.team_code
+	    	from db_eflow_cn.teflow_deputy_manage,inserted
+	    where inserted.staff_code = db_eflow_cn.teflow_deputy_manage.authority_deputy
+	end
+/*----------------------------------------------------------*/
+create trigger tef_team_itrig
+on tpma_team
+for insert as
+	declare @team_code int
+	
+	select @team_code = inserted.team_code from inserted
+	
+	insert into db_eflow_cn.teflow_team_org (team_code,org_team_code) values(@team_code,@team_code)
+
+/*======================For Production============================*/
+/*----------------------------------------------------------*/
+create trigger tef_staff_utrig
+on tpma_staffbasic
+for update as
+	if update(status)
+	begin
+    	declare @delstatus char(1),@insertstatus char(1)
+	    
+		select @delstatus=deleted.status from deleted
+    	select @insertstatus=inserted.status from inserted
+            
+	if @delstatus='A' and @insertstatus='T'
+    	begin
+		update db_eflow.teflow_deputy_manage
+	        set db_eflow.teflow_deputy_manage.status = '02'
+	        from db_eflow.teflow_deputy_manage,deleted
+        	where deleted.staff_code = db_eflow.teflow_deputy_manage.authority_approver
+	        or    deleted.staff_code = db_eflow.teflow_deputy_manage.authority_deputy
+    	end
+    	
+	end
+
+	if update(team_code)
+	begin
+		update db_eflow.teflow_deputy_manage
+		set db_eflow.teflow_deputy_manage.approver_team = inserted.team_code
+		from db_eflow.teflow_deputy_manage,inserted
+		where db_eflow.teflow_deputy_manage.authority_approver = inserted.staff_code
+		
+		update db_eflow.teflow_deputy_manage
+		set db_eflow.teflow_deputy_manage.deputy_team = inserted.team_code
+		from db_eflow.teflow_deputy_manage,inserted
+		where db_eflow.teflow_deputy_manage.authority_deputy = inserted.staff_code    	    
+	end
+		
+/*----------------------------------------------------------*/
+create trigger tef_staff_itrig
+on tpma_staffbasic
+for insert as
+	if (select count(*) from db_eflow.teflow_deputy_manage a, inserted b
+	    where a.authority_approver=b.staff_code or a.authority_deputy=b.staff_code)>0
+	begin
+		update db_eflow.teflow_deputy_manage
+	        set db_eflow.teflow_deputy_manage.status = '01'
+	        from db_eflow.teflow_deputy_manage,inserted
+        	where inserted.staff_code = db_eflow.teflow_deputy_manage.authority_approver
+	        or    inserted.staff_code = db_eflow.teflow_deputy_manage.authority_deputy
+	        
+	    update db_eflow.teflow_deputy_manage
+	    	set db_eflow.teflow_deputy_manage.approver_team = inserted.team_code
+	    	from db_eflow.teflow_deputy_manage,inserted
+	    where inserted.staff_code = db_eflow.teflow_deputy_manage.authority_approver
+	    
+	    update db_eflow.teflow_deputy_manage
+	    	set db_eflow.teflow_deputy_manage.deputy_team = inserted.team_code
+	    	from db_eflow.teflow_deputy_manage,inserted
+	    where inserted.staff_code = db_eflow.teflow_deputy_manage.authority_deputy
+	end
+/*----------------------------------------------------------*/
+create trigger tef_team_itrig
+on tpma_team
+for insert as
+	declare @team_code int
+	
+	select @team_code = inserted.team_code from inserted
+	
+	insert into db_eflow.teflow_team_org (team_code,org_team_code) values(@team_code,@team_code)
+
+/*-------------------------------Test Data---------------------------*/
+/*insert into tpma_staffbasic values('0000000XXX','C9999','C9999','young_test','A',42,'jlakd','pacii','ddd@aig.com',3,'2007-11-29',null,'N','','','','',null,'111','aiait',3,'R8-Core')*/
+
+/*insert into teflow_deputy_manage values('C9999','C9999','2007-11-29','2007-11-30',12,12,'01','C0517','2007-11-29')*/
+
+update tpma_staffbasic set status='T' where staff_code='C9999'
